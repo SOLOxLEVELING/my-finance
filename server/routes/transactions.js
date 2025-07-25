@@ -114,6 +114,51 @@ router.get("/summary/:accountId", async (req, res) => {
   }
 });
 
-module.exports = router;
+// GET /api/transactions/account/:accountId
+// Fetches all transactions for an account, joining with category name
+router.get("/account/:accountId", async (req, res) => {
+  const { accountId } = req.params;
+  const query = `
+      SELECT
+          t.id,
+          t.transaction_date,
+          t.description,
+          t.amount,
+          t.category_id,
+          c.name AS category_name
+      FROM transactions t
+      LEFT JOIN categories c ON t.category_id = c.id
+      WHERE t.account_id = $1
+      ORDER BY t.transaction_date DESC;
+    `;
+  try {
+    const { rows } = await db.query(query, [accountId]);
+    res.json(rows);
+  } catch (error) {
+    console.error("Error fetching transactions:", error);
+    res.status(500).json({ message: "Failed to fetch transactions" });
+  }
+});
+
+// PUT /api/transactions/:transactionId
+// Updates the category for a single transaction
+router.put("/:transactionId", async (req, res) => {
+  const { transactionId } = req.params;
+  const { categoryId } = req.body; // Can be null to "uncategorize"
+
+  try {
+    const { rows } = await db.query(
+      "UPDATE transactions SET category_id = $1 WHERE id = $2 RETURNING *",
+      [categoryId, transactionId]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Transaction not found." });
+    }
+    res.json(rows[0]);
+  } catch (error) {
+    console.error("Error updating transaction:", error);
+    res.status(500).json({ message: "Failed to update transaction" });
+  }
+});
 
 module.exports = router;

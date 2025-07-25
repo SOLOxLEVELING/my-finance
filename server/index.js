@@ -1,18 +1,22 @@
 const express = require("express");
 const cors = require("cors");
 const transactionRoutes = require("./routes/transactions");
+const categoryRoutes = require("./routes/categories");
+const chartRoutes = require("./routes/charts"); // <-- Import chart routes
+const budgetRoutes = require("./routes/budgets"); // <-- Import budget routes
 
 const app = express();
-const PORT = process.env.PORT || 3001; // Backend will run on port 3001
+const PORT = process.env.PORT || 3001;
 
-// Middleware
-app.use(cors()); // Enable Cross-Origin Resource Sharing
-app.use(express.json()); // Parse JSON bodies
+app.use(cors());
+app.use(express.json());
 
 // API Routes
-app.use("/api", transactionRoutes);
+app.use("/api/transactions", transactionRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/charts", chartRoutes); // <-- Register chart routes
+app.use("/api/budgets", budgetRoutes); // <-- Register budget routes
 
-// Start the server
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });

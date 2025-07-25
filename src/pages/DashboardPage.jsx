@@ -1,61 +1,90 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import SummaryWidget from "../components/SummaryWidget";
+import ExpensePieChart from "../components/ExpensePieChart";
+import IncomeVsExpenseBarChart from "../components/IncomeVsExpenseBarChart";
+import BudgetTrackerWidget from "../components/BudgetTrackerWidget"; // <-- Import new widget
+
+// Helper to get the first day of the current month in YYYY-MM-DD format
+const getFirstDayOfMonth = (date) => {
+  return new Date(date.getFullYear(), date.getMonth(), 1)
+    .toISOString()
+    .split("T")[0];
+};
 
 const DashboardPage = () => {
   const [summaryData, setSummaryData] = useState(null);
+  const [pieChartData, setPieChartData] = useState([]);
+  const [barChartData, setBarChartData] = useState([]);
+  const [budgetData, setBudgetData] = useState([]); // <-- Add state for budget data
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // --- Hardcoded value for Step 2 ---
-  // In a real app, this would come from user context after login.
+  // ... (Hardcoded IDs)
   const accountId = 1;
+  const userId = 1;
 
   useEffect(() => {
-    const fetchSummary = async () => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError("");
+      const currentMonth = getFirstDayOfMonth(new Date());
+
       try {
-        setIsLoading(true);
-        setError("");
-        const response = await axios.get(
-          `http://localhost:3001/api/summary/${accountId}`
-        );
-        setSummaryData(response.data);
+        const [summaryRes, pieChartRes, barChartRes, budgetRes] =
+          await Promise.all([
+            // <-- Fetch budget data
+            axios.get(
+              `http://localhost:3001/api/transactions/summary/${accountId}`
+            ),
+            axios.get(
+              `http://localhost:3001/api/charts/expenses-by-category/${userId}`
+            ),
+            axios.get(
+              `http://localhost:3001/api/charts/monthly-summary/${accountId}`
+            ),
+            axios.get(
+              `http://localhost:3001/api/budgets/${userId}/${currentMonth}`
+            ), // <-- API call
+          ]);
+        setSummaryData(summaryRes.data);
+        setPieChartData(pieChartRes.data);
+        setBarChartData(barChartRes.data);
+        setBudgetData(budgetRes.data); // <-- Set budget data
       } catch (err) {
-        setError("Failed to load financial summary. Please try again later.");
-        console.error(err);
+        // ... (error handling)
       } finally {
-        setIsLoading(false);
+        // ... (setIsLoading)
       }
     };
 
-    fetchSummary();
-  }, [accountId]); // Re-fetch if accountId changes
+    fetchData();
+  }, [accountId, userId]);
+
+  // ... (loading and error JSX)
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div>
       <h1 className="text-3xl font-bold tracking-tight text-gray-900">
         Dashboard
       </h1>
 
-      {/* This is the main grid for all dashboard widgets */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-        {isLoading && (
-          <div className="col-span-1 lg:col-span-3 text-center py-10">
-            <p>Loading your dashboard...</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="col-span-1 lg:col-span-3 p-4 bg-red-100 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
-
-        {!isLoading && !error && summaryData && (
-          // Place widgets inside this grid
+        {/* Summary Widget takes full width */}
+        <div className="lg:col-span-3">
           <SummaryWidget summaryData={summaryData} />
-          // Future widgets like charts will go here as more `col-span` items
-        )}
+        </div>
+
+        {/* Budget Tracker */}
+        <div className="lg:col-span-1">
+          <BudgetTrackerWidget data={budgetData} />
+        </div>
+
+        {/* Pie and Bar Charts */}
+        <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ExpensePieChart data={pieChartData} />
+          <IncomeVsExpenseBarChart data={barChartData} />
+        </div>
       </div>
     </div>
   );
