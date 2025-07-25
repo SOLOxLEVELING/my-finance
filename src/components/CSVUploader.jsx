@@ -30,8 +30,9 @@ const CSVUploader = () => {
 
     try {
       // The backend is running on port 3001
+      // NEW - Correct Path
       const response = await axios.post(
-        "http://localhost:3001/api/upload",
+        "http://localhost:3001/api/transactions/upload",
         formData,
         {
           headers: {

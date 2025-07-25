@@ -19,7 +19,8 @@ const getBudgetQuery = `
     WHERE
       a.user_id = $1
       AND t.amount < 0
-      AND DATE_TRUNC('month', t.transaction_date) = $2
+      -- Use a more reliable date range check instead of DATE_TRUNC
+      AND t.transaction_date >= $2 AND t.transaction_date < ($2::date + interval '1 month')
     GROUP BY t.category_id
   )
   SELECT

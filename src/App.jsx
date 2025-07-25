@@ -4,6 +4,7 @@ import DashboardPage from "./pages/DashboardPage";
 import TransactionListPage from "./pages/TransactionListPage";
 import CategoryManagerPage from "./pages/CategoryManagerPage";
 import BudgetSetupPage from "./pages/BudgetSetupPage"; // <-- Import new page
+import DataImportPage from "./pages/DataImportPage"; // <-- Import the new page
 
 // Layout component with shared navigation
 const AppLayout = () => (
@@ -64,8 +65,8 @@ function App() {
           <Route path="transactions" element={<TransactionListPage />} />
           <Route path="categories" element={<CategoryManagerPage />} />
           <Route path="budgets" element={<BudgetSetupPage />} />
-          {/* We will create the import page later */}
-          {/* <Route path="import" element={<DataImportPage />} /> */}
+          <Route path="import" element={<DataImportPage />} />{" "}
+          {/* <-- Activate this route */}
         </Route>
       </Routes>
     </BrowserRouter>

@@ -115,27 +115,55 @@ router.get("/summary/:accountId", async (req, res) => {
 });
 
 // GET /api/transactions/account/:accountId
-// Fetches all transactions for an account, joining with category name
+// Fetches transactions for an account with optional filtering
 router.get("/account/:accountId", async (req, res) => {
   const { accountId } = req.params;
-  const query = `
+  const { search, minAmount, maxAmount, startDate, endDate } = req.query;
+
+  let queryParams = [accountId];
+  let conditions = [];
+
+  let baseQuery = `
       SELECT
-          t.id,
-          t.transaction_date,
-          t.description,
-          t.amount,
-          t.category_id,
+          t.id, t.transaction_date, t.description, t.amount, t.category_id,
           c.name AS category_name
       FROM transactions t
       LEFT JOIN categories c ON t.category_id = c.id
       WHERE t.account_id = $1
-      ORDER BY t.transaction_date DESC;
     `;
+
+  if (search) {
+    queryParams.push(`%${search}%`);
+    conditions.push(`t.description ILIKE $${queryParams.length}`);
+  }
+  if (minAmount) {
+    queryParams.push(minAmount);
+    conditions.push(`t.amount >= $${queryParams.length}`);
+  }
+  if (maxAmount) {
+    queryParams.push(maxAmount);
+    conditions.push(`t.amount <= $${queryParams.length}`);
+  }
+  if (startDate) {
+    queryParams.push(startDate);
+    conditions.push(`t.transaction_date >= $${queryParams.length}`);
+  }
+  if (endDate) {
+    queryParams.push(endDate);
+    conditions.push(`t.transaction_date <= $${queryParams.length}`);
+  }
+
+  if (conditions.length > 0) {
+    baseQuery += " AND " + conditions.join(" AND ");
+  }
+
+  baseQuery += " ORDER BY t.transaction_date DESC;";
+
   try {
-    const { rows } = await db.query(query, [accountId]);
+    const { rows } = await db.query(baseQuery, queryParams);
     res.json(rows);
   } catch (error) {
-    console.error("Error fetching transactions:", error);
+    console.error("Error fetching filtered transactions:", error);
     res.status(500).json({ message: "Failed to fetch transactions" });
   }
 });
