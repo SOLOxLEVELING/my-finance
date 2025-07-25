@@ -76,4 +76,44 @@ router.post("/upload", upload.single("csvFile"), async (req, res) => {
     });
 });
 
+// GET /api/summary/:accountId
+// Calculates and returns total income, expenses, and net savings.
+router.get("/summary/:accountId", async (req, res) => {
+  const { accountId } = req.params;
+
+  if (!accountId) {
+    return res.status(400).send({ message: "Account ID is required." });
+  }
+
+  const summaryQuery = `
+      SELECT
+        -- Sum of all positive amounts (income)
+        COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0) AS "totalIncome",
+        -- Sum of all negative amounts (expenses)
+        COALESCE(SUM(CASE WHEN amount < 0 THEN amount ELSE 0 END), 0) AS "totalExpenses"
+      FROM transactions
+      WHERE account_id = $1;
+    `;
+
+  try {
+    const { rows } = await db.query(summaryQuery, [accountId]);
+    const summary = rows[0];
+
+    // Calculate net savings
+    const netSavings =
+      parseFloat(summary.totalIncome) + parseFloat(summary.totalExpenses);
+
+    res.status(200).send({
+      totalIncome: parseFloat(summary.totalIncome),
+      totalExpenses: parseFloat(summary.totalExpenses), // This will be a negative number
+      netSavings: netSavings,
+    });
+  } catch (error) {
+    console.error("Database summary error:", error);
+    res.status(500).send({ message: "Failed to fetch summary data." });
+  }
+});
+
+module.exports = router;
+
 module.exports = router;
