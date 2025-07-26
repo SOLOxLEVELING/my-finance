@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import apiClient from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 
-// Helper to get the first day of the current month in YYYY-MM-DD format
 const getFirstDayOfMonth = (date) => {
   return new Date(date.getFullYear(), date.getMonth(), 1)
     .toISOString()
@@ -12,16 +12,15 @@ const BudgetSetupPage = () => {
   const [budgets, setBudgets] = useState([]);
   const [month, setMonth] = useState(getFirstDayOfMonth(new Date()));
   const [message, setMessage] = useState("");
-
-  // --- Hardcoded user ID ---
-  const userId = 1;
+  const { userId } = useAuth(); // Get the logged-in user's ID
 
   useEffect(() => {
+    if (!userId) return; // Don't fetch if there's no user
+
     const fetchBudgets = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:3001/api/budgets/${userId}/${month}`
-        );
+        // Use apiClient and the correct, shorter URL
+        const response = await apiClient.get(`/budgets/${month}`);
         setBudgets(response.data);
       } catch (error) {
         console.error("Failed to fetch budgets", error);
@@ -39,14 +38,14 @@ const BudgetSetupPage = () => {
 
   const handleSaveBudget = async (categoryId, amount) => {
     try {
-      await axios.post("http://localhost:3001/api/budgets", {
-        userId,
+      // Use apiClient, which sends the user's token automatically
+      await apiClient.post("/budgets", {
         categoryId,
         amount: amount || 0,
         month,
       });
       setMessage(`Budget for category saved!`);
-      setTimeout(() => setMessage(""), 3000); // Clear message after 3 seconds
+      setTimeout(() => setMessage(""), 3000);
     } catch (error) {
       console.error("Failed to save budget", error);
       setMessage("Error saving budget.");

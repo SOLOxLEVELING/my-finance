@@ -1,22 +1,23 @@
 import React, { useState, useEffect } from "react";
 import apiClient from "../api/axios";
 
-// Helper function to format currency
 const formatCurrency = (value) => {
-  return new Intl.NumberFormat("en-US", {
+  // Note: The backend query returns income as positive and expenses as negative in totalSpending
+  const formattedValue = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
   }).format(value);
+  return value > 0 ? `+${formattedValue}` : formattedValue;
 };
 
 const CategoryManagerPage = () => {
   const [categories, setCategories] = useState([]);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [message, setMessage] = useState("");
+  const [editingCategory, setEditingCategory] = useState(null);
 
   const fetchCategories = async () => {
     try {
-      // Call the new endpoint to get spending totals
       const response = await apiClient.get("/categories/with-spending");
       setCategories(response.data);
     } catch (error) {
@@ -35,9 +36,35 @@ const CategoryManagerPage = () => {
       await apiClient.post("/categories", { name: newCategoryName });
       setNewCategoryName("");
       setMessage(`Category "${newCategoryName}" created successfully!`);
-      fetchCategories(); // Refresh the list with new totals
+      setTimeout(() => setMessage(""), 3000);
+      fetchCategories();
     } catch (error) {
       setMessage("Failed to create category. It may already exist.");
+    }
+  };
+
+  const handleUpdateCategory = async (id, name) => {
+    try {
+      await apiClient.put(`/categories/${id}`, { name });
+      setEditingCategory(null);
+      fetchCategories();
+    } catch (error) {
+      console.error("Failed to update category", error);
+    }
+  };
+
+  const handleDeleteCategory = async (id) => {
+    if (
+      window.confirm(
+        "Are you sure? This will remove the category and uncategorize all its transactions."
+      )
+    ) {
+      try {
+        await apiClient.delete(`/categories/${id}`);
+        fetchCategories();
+      } catch (error) {
+        console.error("Failed to delete category", error);
+      }
     }
   };
 
@@ -46,6 +73,7 @@ const CategoryManagerPage = () => {
       <h1 className="text-3xl font-bold tracking-tight text-gray-900">
         Manage Categories
       </h1>
+
       <div className="mt-6 p-6 bg-white rounded-lg shadow-md">
         <h2 className="text-xl font-semibold text-gray-800">
           Create New Category
@@ -89,18 +117,48 @@ const CategoryManagerPage = () => {
                 key={category.id}
                 className="px-6 py-4 flex justify-between items-center"
               >
-                <p className="text-sm font-medium text-gray-900">
-                  {category.name}
-                </p>
-                <p
-                  className={`text-sm font-semibold ${
-                    category.totalSpending < 0
-                      ? "text-red-600"
-                      : "text-gray-600"
-                  }`}
-                >
-                  {formatCurrency(category.totalSpending)}
-                </p>
+                {editingCategory?.id === category.id ? (
+                  <input
+                    type="text"
+                    defaultValue={category.name}
+                    onBlur={(e) =>
+                      handleUpdateCategory(category.id, e.target.value)
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter")
+                        handleUpdateCategory(category.id, e.target.value);
+                    }}
+                    className="text-sm font-medium text-gray-900 border rounded px-2 py-1"
+                    autoFocus
+                  />
+                ) : (
+                  <p className="text-sm font-medium text-gray-900">
+                    {category.name}
+                  </p>
+                )}
+                <div className="flex items-center space-x-4">
+                  <p
+                    className={`text-sm font-semibold ${
+                      category.totalSpending < 0
+                        ? "text-red-600"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    {formatCurrency(category.totalSpending)}
+                  </p>
+                  <button
+                    onClick={() => setEditingCategory(category)}
+                    className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCategory(category.id)}
+                    className="text-red-600 hover:text-red-900 text-sm font-medium"
+                  >
+                    Delete
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

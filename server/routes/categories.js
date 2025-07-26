@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.use(authenticateToken);
 
-// This new route gets categories AND calculates total spending in each
+// GET /api/categories/with-spending (Gets categories AND calculates spending)
 router.get("/with-spending", async (req, res) => {
   const { userId } = req.user;
   const query = `
@@ -32,7 +32,7 @@ router.get("/with-spending", async (req, res) => {
   }
 });
 
-// This route just gets the category names, used for dropdowns
+// GET /api/categories (Gets all category names for the user)
 router.get("/", async (req, res) => {
   const { userId } = req.user;
   try {
@@ -46,11 +46,11 @@ router.get("/", async (req, res) => {
   }
 });
 
-// This route creates a new category
+// POST /api/categories (Creates a new category)
 router.post("/", async (req, res) => {
   const { name } = req.body;
   const { userId } = req.user;
-  if (!name || !userId) {
+  if (!name) {
     return res.status(400).json({ message: "Category name is required." });
   }
   try {
@@ -63,6 +63,50 @@ router.post("/", async (req, res) => {
     res
       .status(500)
       .json({ message: "Failed to create category. It may already exist." });
+  }
+});
+
+// PUT /api/categories/:id (Updates a category name)
+router.put("/:id", async (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  const { userId } = req.user;
+  if (!name) {
+    return res.status(400).json({ message: "Category name is required." });
+  }
+  try {
+    const { rows } = await db.query(
+      "UPDATE categories SET name = $1 WHERE id = $2 AND user_id = $3 RETURNING *",
+      [name, id, userId]
+    );
+    if (rows.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Category not found or permission denied." });
+    }
+    res.json(rows[0]);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update category." });
+  }
+});
+
+// DELETE /api/categories/:id (Deletes a category)
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.user;
+  try {
+    const result = await db.query(
+      "DELETE FROM categories WHERE id = $1 AND user_id = $2",
+      [id, userId]
+    );
+    if (result.rowCount === 0) {
+      return res
+        .status(404)
+        .json({ message: "Category not found or permission denied." });
+    }
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ message: "Failed to delete category." });
   }
 });
 

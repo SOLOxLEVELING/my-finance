@@ -6,57 +6,109 @@ const db = require("../db");
 const authenticateToken = require("../middleware/authenticateToken");
 const router = express.Router();
 
-const upload = multer({ storage: multer.memoryStorage() });
-
 router.use(authenticateToken);
 
-router.post("/upload", upload.single("csvFile"), async (req, res) => {
+// POST /api/transactions (Create a single transaction)
+router.post("/", async (req, res) => {
   const { accountId } = req.user;
-  if (!req.file) {
-    return res.status(400).send({ message: "No file uploaded." });
+  const { description, amount, transaction_date, category_id } = req.body;
+  if (!description || !amount || !transaction_date) {
+    return res
+      .status(400)
+      .json({ message: "Description, amount, and date are required." });
   }
-
-  const results = [];
-  const readableStream = stream.Readable.from(req.file.buffer);
-
-  readableStream
-    .pipe(csv())
-    .on("data", (data) => {
-      if (data.transaction_date && data.description && data.amount) {
-        results.push(data);
-      }
-    })
-    .on("end", async () => {
-      if (results.length === 0) {
-        return res
-          .status(400)
-          .send({ message: "CSV file is empty or has invalid format." });
-      }
-      const client = await db.query("BEGIN");
-      try {
-        for (const row of results) {
-          const { transaction_date, description, amount } = row;
-          const queryText = `INSERT INTO transactions(account_id, transaction_date, description, amount, category_id) VALUES($1, $2, $3, $4, NULL)`;
-          await db.query(queryText, [
-            accountId,
-            transaction_date,
-            description,
-            parseFloat(amount),
-          ]);
-        }
-        await db.query("COMMIT");
-        res.status(201).send({
-          message: `${results.length} transactions uploaded successfully!`,
-        });
-      } catch (error) {
-        await db.query("ROLLBACK");
-        res
-          .status(500)
-          .send({ message: "Failed to import data into the database." });
-      }
-    });
+  try {
+    const query = `INSERT INTO transactions(account_id, description, amount, transaction_date, category_id) VALUES($1, $2, $3, $4, $5) RETURNING *;`;
+    const { rows } = await db.query(query, [
+      accountId,
+      description,
+      parseFloat(amount),
+      transaction_date,
+      category_id || null,
+    ]);
+    res.status(201).json(rows[0]);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to create transaction" });
+  }
 });
 
+// PUT /api/transactions/:id (The single, correct update route)
+router.put("/:id", async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.user;
+
+  try {
+    // First, verify the user owns this transaction
+    const ownershipCheck = await db.query(
+      "SELECT t.id FROM transactions t JOIN accounts a ON t.account_id = a.id WHERE t.id = $1 AND a.user_id = $2",
+      [id, userId]
+    );
+
+    if (ownershipCheck.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Transaction not found or permission denied." });
+    }
+
+    // Dynamically build the update query
+    let setClauses = [];
+    let queryParams = [];
+    let paramIndex = 1;
+    const { categoryId, amount, description, transaction_date } = req.body;
+
+    if (categoryId !== undefined) {
+      queryParams.push(categoryId === "" ? null : categoryId);
+      setClauses.push(`category_id = $${paramIndex++}`);
+    }
+    if (amount !== undefined) {
+      queryParams.push(parseFloat(amount));
+      setClauses.push(`amount = $${paramIndex++}`);
+    }
+    if (description !== undefined) {
+      queryParams.push(description);
+      setClauses.push(`description = $${paramIndex++}`);
+    }
+    if (transaction_date !== undefined) {
+      queryParams.push(transaction_date);
+      setClauses.push(`transaction_date = $${paramIndex++}`);
+    }
+
+    if (setClauses.length === 0) {
+      return res.status(400).json({ message: "No fields to update." });
+    }
+
+    queryParams.push(id);
+    const updateQuery = `UPDATE transactions SET ${setClauses.join(
+      ", "
+    )} WHERE id = $${paramIndex} RETURNING *`;
+
+    const { rows } = await db.query(updateQuery, queryParams);
+    res.json(rows[0]);
+  } catch (error) {
+    console.error("Error updating transaction:", error);
+    res.status(500).json({ message: "Failed to update transaction" });
+  }
+});
+
+// DELETE /api/transactions/:id
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.user;
+  try {
+    const deleteQuery = `DELETE FROM transactions WHERE id = $1 AND account_id IN (SELECT id FROM accounts WHERE user_id = $2)`;
+    const result = await db.query(deleteQuery, [id, userId]);
+    if (result.rowCount === 0) {
+      return res
+        .status(404)
+        .json({ message: "Transaction not found or permission denied." });
+    }
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ message: "Failed to delete transaction." });
+  }
+});
+
+// GET /api/transactions/summary
 router.get("/summary", async (req, res) => {
   const { accountId } = req.user;
   const q = `SELECT COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0) AS "totalIncome", COALESCE(SUM(CASE WHEN amount < 0 THEN amount ELSE 0 END), 0) AS "totalExpenses" FROM transactions WHERE account_id = $1;`;
@@ -75,6 +127,7 @@ router.get("/summary", async (req, res) => {
   }
 });
 
+// GET /api/transactions/account
 router.get("/account", async (req, res) => {
   const { accountId } = req.user;
   const { search, minAmount, maxAmount, startDate, endDate } = req.query;
@@ -113,21 +166,49 @@ router.get("/account", async (req, res) => {
   }
 });
 
-router.put("/:transactionId", async (req, res) => {
-  const { transactionId } = req.params;
-  const { categoryId } = req.body;
-  try {
-    const { rows } = await db.query(
-      "UPDATE transactions SET category_id = $1 WHERE id = $2 RETURNING *",
-      [categoryId, transactionId]
-    );
-    if (rows.length === 0) {
-      return res.status(404).json({ message: "Transaction not found." });
-    }
-    res.json(rows[0]);
-  } catch (error) {
-    res.status(500).json({ message: "Failed to update transaction" });
-  }
+// POST /api/transactions/upload
+const upload = multer({ storage: multer.memoryStorage() });
+router.post("/upload", upload.single("csvFile"), async (req, res) => {
+  const { accountId } = req.user;
+  if (!req.file) return res.status(400).send({ message: "No file uploaded." });
+  const results = [];
+  const readableStream = stream.Readable.from(req.file.buffer);
+  readableStream
+    .pipe(csv())
+    .on("data", (data) => {
+      if (data.transaction_date && data.description && data.amount)
+        results.push(data);
+    })
+    .on("end", async () => {
+      if (results.length === 0)
+        return res
+          .status(400)
+          .send({ message: "CSV file is empty or has invalid format." });
+      const client = await db.query("BEGIN");
+      try {
+        for (const row of results) {
+          const { transaction_date, description, amount } = row;
+          const queryText = `INSERT INTO transactions(account_id, transaction_date, description, amount, category_id) VALUES($1, $2, $3, $4, NULL)`;
+          await db.query(queryText, [
+            accountId,
+            transaction_date,
+            description,
+            parseFloat(amount),
+          ]);
+        }
+        await db.query("COMMIT");
+        res
+          .status(201)
+          .send({
+            message: `${results.length} transactions uploaded successfully!`,
+          });
+      } catch (error) {
+        await db.query("ROLLBACK");
+        res
+          .status(500)
+          .send({ message: "Failed to import data into the database." });
+      }
+    });
 });
 
 module.exports = router;
