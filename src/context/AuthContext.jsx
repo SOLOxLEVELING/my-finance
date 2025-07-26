@@ -1,3 +1,4 @@
+// context/AuthContext.jsx
 import React, { createContext, useState, useContext } from "react";
 
 const AuthContext = createContext(null);
@@ -9,24 +10,39 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
     const accountId = localStorage.getItem("accountId");
-    return token ? { token, userId, accountId } : null;
+    const currency = localStorage.getItem("currency"); // Get currency
+    return token
+      ? { token, userId, accountId, currency: currency || "USD" }
+      : null;
   });
 
   const login = (data) => {
     localStorage.setItem("token", data.token);
     localStorage.setItem("userId", data.userId);
     localStorage.setItem("accountId", data.accountId);
+    localStorage.setItem("currency", data.currency); // Set currency
     setAuth(data);
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("accountId");
+    // ... remove all items
+    localStorage.removeItem("currency");
     setAuth(null);
   };
 
-  const value = { isAuthenticated: !!auth, ...auth, login, logout };
+  // New function to update currency in the app state
+  const updateUserCurrency = (newCurrency) => {
+    localStorage.setItem("currency", newCurrency);
+    setAuth((prev) => ({ ...prev, currency: newCurrency }));
+  };
+
+  const value = {
+    isAuthenticated: !!auth,
+    ...auth,
+    login,
+    logout,
+    updateUserCurrency,
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

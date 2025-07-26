@@ -1,4 +1,5 @@
 import React from "react";
+import { useCurrency } from "../hooks/useCurrency"; // <-- Import the hook
 
 // A helper function to format currency
 const formatCurrency = (value) => {
@@ -8,12 +9,15 @@ const formatCurrency = (value) => {
   }).format(value);
 };
 
+// Removed the old formatCurrency helper function
+
 const StatCard = ({ title, value, colorClass }) => {
+  const { format } = useCurrency(); // <-- Use the hook
   return (
     <div className="p-6 bg-white rounded-lg shadow-md">
       <h3 className="text-sm font-medium text-gray-500 truncate">{title}</h3>
       <p className={`mt-1 text-3xl font-semibold ${colorClass}`}>
-        {formatCurrency(value)}
+        {format(value)} {/* <-- Use the new format function */}
       </p>
     </div>
   );

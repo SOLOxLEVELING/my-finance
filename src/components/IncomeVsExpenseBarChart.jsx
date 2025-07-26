@@ -9,8 +9,11 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { useCurrency } from "../hooks/useCurrency"; // 1. Import the hook
 
 const IncomeVsExpenseBarChart = ({ data }) => {
+  const { format } = useCurrency(); // 2. Call the hook
+
   if (!data || data.length === 0) {
     return (
       <div className="p-6 bg-white rounded-lg shadow-md flex items-center justify-center h-full">
@@ -32,14 +35,8 @@ const IncomeVsExpenseBarChart = ({ data }) => {
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="month" />
           <YAxis />
-          <Tooltip
-            formatter={(value) =>
-              new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "USD",
-              }).format(value)
-            }
-          />
+          <Tooltip formatter={(value) => format(value)} />{" "}
+          {/* 3. Use the format function */}
           <Legend />
           <Bar dataKey="income" fill="#22c55e" />
           <Bar dataKey="expenses" fill="#ef4444" />

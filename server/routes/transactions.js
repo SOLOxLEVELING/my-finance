@@ -8,6 +8,9 @@ const router = express.Router();
 
 router.use(authenticateToken);
 
+// --- All other routes (POST /, PUT /:id, DELETE /:id, GET /summary, GET /account) remain the same. ---
+// --- Only the POST /upload route below has been changed. ---
+
 // POST /api/transactions (Create a single transaction)
 router.post("/", async (req, res) => {
   const { accountId } = req.user;
@@ -166,47 +169,99 @@ router.get("/account", async (req, res) => {
   }
 });
 
-// POST /api/transactions/upload
+// --- NEW AND IMPROVED UPLOAD LOGIC ---
+
+// A map of keywords to link descriptions to category names.
+// You can expand this list with more keywords and categories.
+const categoryKeywords = {
+  Salary: ["paycheck"],
+  Shopping: ["amazon", "purchase"],
+  Dining: ["starbucks", "lyft", "coffee"],
+  Groceries: ["whole foods", "market"],
+  Fuel: ["shell gas", "station"],
+  Entertainment: ["netflix", "spotify", "subscription"],
+};
+
 const upload = multer({ storage: multer.memoryStorage() });
 router.post("/upload", upload.single("csvFile"), async (req, res) => {
-  const { accountId } = req.user;
+  const { accountId, userId } = req.user;
   if (!req.file) return res.status(400).send({ message: "No file uploaded." });
+
   const results = [];
   const readableStream = stream.Readable.from(req.file.buffer);
+
   readableStream
     .pipe(csv())
     .on("data", (data) => {
-      if (data.transaction_date && data.description && data.amount)
+      if (data.transaction_date && data.description && data.amount) {
         results.push(data);
+      }
     })
     .on("end", async () => {
-      if (results.length === 0)
+      if (results.length === 0) {
         return res
           .status(400)
-          .send({ message: "CSV file is empty or has invalid format." });
+          .send({ message: "CSV file is empty or has an invalid format." });
+      }
+
       const client = await db.query("BEGIN");
       try {
+        // 1. Fetch all user's categories from the DB into a variable.
+        const categoriesResult = await db.query(
+          "SELECT id, name FROM categories WHERE user_id = $1",
+          [userId]
+        );
+        let userCategories = categoriesResult.rows;
+
+        // 2. Loop through every row in the CSV file.
         for (const row of results) {
           const { transaction_date, description, amount } = row;
-          const queryText = `INSERT INTO transactions(account_id, transaction_date, description, amount, category_id) VALUES($1, $2, $3, $4, NULL)`;
+          let categoryId = null;
+          const lowerCaseDescription = description.toLowerCase();
+
+          // 3. Find a matching category based on keywords.
+          for (const categoryName in categoryKeywords) {
+            const keywords = categoryKeywords[categoryName];
+            if (
+              keywords.some((keyword) => lowerCaseDescription.includes(keyword))
+            ) {
+              let category = userCategories.find(
+                (c) => c.name === categoryName
+              );
+
+              // 4. If category doesn't exist, create it.
+              if (!category) {
+                const newCategoryResult = await db.query(
+                  "INSERT INTO categories (user_id, name) VALUES ($1, $2) RETURNING id, name",
+                  [userId, categoryName]
+                );
+                category = newCategoryResult.rows[0];
+                userCategories.push(category); // Add to our list to prevent re-creating it.
+              }
+              categoryId = category.id;
+              break; // Stop after finding the first match.
+            }
+          }
+
+          // 5. Insert the transaction with the found (or new) category ID.
+          const queryText = `INSERT INTO transactions(account_id, transaction_date, description, amount, category_id) VALUES($1, $2, $3, $4, $5)`;
           await db.query(queryText, [
             accountId,
             transaction_date,
             description,
             parseFloat(amount),
+            categoryId,
           ]);
         }
+
         await db.query("COMMIT");
-        res
-          .status(201)
-          .send({
-            message: `${results.length} transactions uploaded successfully!`,
-          });
+        res.status(201).send({
+          message: `${results.length} transactions uploaded successfully!`,
+        });
       } catch (error) {
         await db.query("ROLLBACK");
-        res
-          .status(500)
-          .send({ message: "Failed to import data into the database." });
+        console.error("Error during CSV import:", error);
+        res.status(500).send({ message: "Failed to import data." });
       }
     });
 });

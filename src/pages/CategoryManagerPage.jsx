@@ -1,20 +1,13 @@
 import React, { useState, useEffect } from "react";
 import apiClient from "../api/axios";
-
-const formatCurrency = (value) => {
-  // Note: The backend query returns income as positive and expenses as negative in totalSpending
-  const formattedValue = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(value);
-  return value > 0 ? `+${formattedValue}` : formattedValue;
-};
+import { useCurrency } from "../hooks/useCurrency"; // Imported the hook
 
 const CategoryManagerPage = () => {
   const [categories, setCategories] = useState([]);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [message, setMessage] = useState("");
   const [editingCategory, setEditingCategory] = useState(null);
+  const { format } = useCurrency();
 
   const fetchCategories = async () => {
     try {
@@ -144,7 +137,7 @@ const CategoryManagerPage = () => {
                         : "text-gray-600"
                     }`}
                   >
-                    {formatCurrency(category.totalSpending)}
+                    {format(category.totalSpending)}
                   </p>
                   <button
                     onClick={() => setEditingCategory(category)}

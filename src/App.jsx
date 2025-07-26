@@ -9,6 +9,8 @@ import TransactionListPage from "./pages/TransactionListPage";
 import CategoryManagerPage from "./pages/CategoryManagerPage";
 import BudgetSetupPage from "./pages/BudgetSetupPage"; // <-- Import new page
 import DataImportPage from "./pages/DataImportPage"; // <-- Import the new page
+import SettingsPage from "./pages/SettingsPage"; // <-- Import the new page
+import CurrencyProvider from "./context/CurrencyProvider";
 
 // Layout component with shared navigation
 const AppLayout = () => {
@@ -21,7 +23,7 @@ const AppLayout = () => {
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <Link to="/" className="text-2xl font-bold text-blue-700">
-              FinanceDash
+              myFinance
             </Link>
             <div className="flex items-center space-x-4">
               <Link
@@ -47,6 +49,12 @@ const AppLayout = () => {
                 className="text-sm font-medium text-gray-500 hover:text-gray-900"
               >
                 Budgets
+              </Link>
+              <Link
+                to="/settings"
+                className="text-sm font-medium text-gray-500 hover:text-gray-900"
+              >
+                Settings
               </Link>
               <Link
                 to="/import"
@@ -76,26 +84,27 @@ const AppLayout = () => {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+      <CurrencyProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
 
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<AppLayout />}>
-              <Route index element={<DashboardPage />} />
-              <Route path="transactions" element={<TransactionListPage />} />
-              {/* ... all other app routes */}
-              <Route path="categories" element={<CategoryManagerPage />} />
-              <Route path="budgets" element={<BudgetSetupPage />} />
-              <Route path="import" element={<DataImportPage />} />{" "}
-              {/* <-- Activate this route */}
+            {/* Protected Routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/" element={<AppLayout />}>
+                <Route index element={<DashboardPage />} />
+                <Route path="transactions" element={<TransactionListPage />} />
+                <Route path="categories" element={<CategoryManagerPage />} />
+                <Route path="budgets" element={<BudgetSetupPage />} />
+                <Route path="import" element={<DataImportPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+              </Route>
             </Route>
-          </Route>
-        </Routes>
-      </BrowserRouter>
+          </Routes>
+        </BrowserRouter>
+      </CurrencyProvider>
     </AuthProvider>
   );
 }

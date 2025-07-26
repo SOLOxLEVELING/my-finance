@@ -1,14 +1,8 @@
 import React from "react";
-
-// Helper function to format currency
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(value);
-};
+import { useCurrency } from "../hooks/useCurrency"; // 1. Import the hook
 
 const BudgetProgressBar = ({ categoryName, spent, budget }) => {
+  const { format } = useCurrency();
   const percentage = budget > 0 ? (spent / budget) * 100 : 0;
   const isOverBudget = percentage > 100;
 
@@ -24,7 +18,7 @@ const BudgetProgressBar = ({ categoryName, spent, budget }) => {
           {categoryName}
         </span>
         <span className="text-sm text-gray-500">
-          {formatCurrency(spent)} / {formatCurrency(budget)}
+          {format(Math.abs(spent))} / {format(budget)}
         </span>
       </div>
       <div className="w-full bg-gray-200 rounded-full h-2.5">
@@ -38,7 +32,6 @@ const BudgetProgressBar = ({ categoryName, spent, budget }) => {
 };
 
 const BudgetTrackerWidget = ({ data }) => {
-  // Filter for categories that actually have a budget set
   const budgetedItems = data.filter((item) => item.budgetAmount > 0);
 
   if (budgetedItems.length === 0) {
@@ -59,7 +52,7 @@ const BudgetTrackerWidget = ({ data }) => {
           <BudgetProgressBar
             key={item.categoryId}
             categoryName={item.categoryName}
-            spent={item.spentAmount}
+            spent={item.spentAmount} // Note: spentAmount from API is already positive
             budget={item.budgetAmount}
           />
         ))}

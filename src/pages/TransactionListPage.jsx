@@ -2,12 +2,7 @@ import React, { useState, useEffect } from "react";
 import apiClient from "../api/axios";
 import FilterControls from "../components/FilterControls";
 import { useAuth } from "../context/AuthContext";
-
-// --- Helper Functions ---
-const formatCurrency = (value) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-    value
-  );
+import { useCurrency } from "../hooks/useCurrency"; // <-- Import the hook
 
 // REVISED: This new version correctly handles timezones
 const formatDateForInput = (dateString) => {
@@ -134,6 +129,7 @@ const TransactionListPage = () => {
   const [editingTransactionId, setEditingTransactionId] = useState(null);
   const [editFormData, setEditFormData] = useState({});
   const { accountId, userId } = useAuth();
+  const { format } = useCurrency();
 
   const fetchData = async () => {
     if (!accountId || !userId) return;
@@ -291,7 +287,7 @@ const TransactionListPage = () => {
                           tx.amount < 0 ? "text-red-600" : "text-green-600"
                         }`}
                       >
-                        {formatCurrency(tx.amount)}
+                        {format(tx.amount)}{" "}
                       </p>
                       <p className="md:col-span-2 text-sm text-gray-500">
                         {tx.category_name || "Uncategorized"}
