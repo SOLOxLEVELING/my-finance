@@ -1,54 +1,70 @@
 import React, { useState, useEffect } from "react";
-import apiClient from "../api/axios";
 import { useAuth } from "../context/AuthContext";
-
-const getFirstDayOfMonth = (date) => {
-  return new Date(date.getFullYear(), date.getMonth(), 1)
-    .toISOString()
-    .split("T")[0];
-};
+import apiClient from "../api/axios";
+import { useCurrency } from "../hooks/useCurrency";
 
 const BudgetSetupPage = () => {
-  const [budgets, setBudgets] = useState([]);
-  const [month, setMonth] = useState(getFirstDayOfMonth(new Date()));
+  const [budgetData, setBudgetData] = useState([]);
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [message, setMessage] = useState("");
-  const { userId } = useAuth(); // Get the logged-in user's ID
+  const { symbol } = useCurrency();
+  const { refreshData } = useAuth();
 
-  useEffect(() => {
-    if (!userId) return; // Don't fetch if there's no user
-
-    const fetchBudgets = async () => {
-      try {
-        // Use apiClient and the correct, shorter URL
-        const response = await apiClient.get(`/budgets/${month}`);
-        setBudgets(response.data);
-      } catch (error) {
-        console.error("Failed to fetch budgets", error);
-      }
-    };
-    fetchBudgets();
-  }, [userId, month]);
-
-  const handleBudgetChange = (categoryId, amount) => {
-    const updatedBudgets = budgets.map((b) =>
-      b.categoryId === categoryId ? { ...b, budgetAmount: amount } : b
-    );
-    setBudgets(updatedBudgets);
+  const fetchBudgetData = async (currentMonth) => {
+    try {
+      const response = await apiClient.get(`/budgets/${currentMonth}-01`);
+      setBudgetData(response.data);
+    } catch (error) {
+      console.error("Failed to fetch budget data", error);
+      setMessage("Error: Could not load budget data.");
+    }
   };
 
-  const handleSaveBudget = async (categoryId, amount) => {
+  useEffect(() => {
+    fetchBudgetData(month);
+  }, [month]);
+
+  // FIX #1: This function now correctly updates the 'budgetAmountOriginal' property
+  const handleInputChange = (categoryId, amount) => {
+    // Allow the input to be temporarily empty while typing
+    if (amount === "") {
+      setBudgetData(
+        budgetData.map((item) =>
+          item.categoryId === categoryId
+            ? { ...item, budgetAmountOriginal: "" }
+            : item
+        )
+      );
+      return;
+    }
+    const newAmount = parseFloat(amount);
+    setBudgetData(
+      budgetData.map((item) =>
+        item.categoryId === categoryId
+          ? { ...item, budgetAmountOriginal: isNaN(newAmount) ? 0 : newAmount }
+          : item
+      )
+    );
+  };
+
+  const handleSaveChanges = async () => {
+    setMessage("");
     try {
-      // Use apiClient, which sends the user's token automatically
-      await apiClient.post("/budgets", {
-        categoryId,
-        amount: amount || 0,
-        month,
-      });
-      setMessage(`Budget for category saved!`);
+      const payload = {
+        // FIX #2: Ensure the payload sends the correct property
+        budgets: budgetData.map(({ categoryId, budgetAmountOriginal }) => ({
+          categoryId,
+          amount: budgetAmountOriginal || 0,
+        })),
+        month: `${month}-01`,
+      };
+      await apiClient.post("/budgets/bulk-update", payload);
+      setMessage("Budgets saved successfully!");
+      refreshData();
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
-      console.error("Failed to save budget", error);
-      setMessage("Error saving budget.");
+      console.error("Failed to save budgets", error);
+      setMessage("Error: Failed to save budgets.");
     }
   };
 
@@ -57,53 +73,60 @@ const BudgetSetupPage = () => {
       <h1 className="text-3xl font-bold tracking-tight text-gray-900">
         Set Monthly Budgets
       </h1>
-
       <div className="mt-4">
         <label
           htmlFor="month-select"
           className="block text-sm font-medium text-gray-700"
         >
-          Select Month
+          Select Month:
         </label>
         <input
           type="month"
           id="month-select"
-          value={month.slice(0, 7)}
-          onChange={(e) =>
-            setMonth(getFirstDayOfMonth(new Date(e.target.value)))
-          }
+          value={month}
+          onChange={(e) => setMonth(e.target.value)}
           className="mt-1 block w-full max-w-xs px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm"
         />
       </div>
 
-      {message && <p className="mt-4 text-sm text-green-600">{message}</p>}
-
-      <div className="mt-6 bg-white shadow overflow-hidden sm:rounded-md">
-        <ul className="divide-y divide-gray-200">
-          {budgets.map(({ categoryId, categoryName, budgetAmount }) => (
-            <li
-              key={categoryId}
-              className="px-4 py-4 sm:px-6 flex items-center justify-between"
+      <div className="mt-6 p-6 bg-white rounded-lg shadow-md">
+        <div className="space-y-4">
+          {budgetData.map((item) => (
+            <div
+              key={item.categoryId}
+              className="flex items-center justify-between"
             >
-              <p className="text-sm font-medium text-gray-900">
-                {categoryName}
-              </p>
-              <div className="flex items-center space-x-2">
-                <span className="text-gray-500">$</span>
+              <span className="text-sm font-medium text-gray-800">
+                {item.categoryName}
+              </span>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+                  {symbol}
+                </span>
                 <input
                   type="number"
-                  value={budgetAmount}
+                  value={item.budgetAmountOriginal}
                   onChange={(e) =>
-                    handleBudgetChange(categoryId, e.target.value)
+                    handleInputChange(item.categoryId, e.target.value)
                   }
-                  onBlur={(e) => handleSaveBudget(categoryId, e.target.value)}
-                  className="w-32 px-2 py-1 border border-gray-300 rounded-md"
+                  className="block w-40 pl-7 pr-2 py-2 border border-gray-300 rounded-md shadow-sm"
                   placeholder="0.00"
+                  min="0"
+                  step="0.01"
                 />
               </div>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
+        <div className="mt-6 flex justify-end items-center">
+          {message && <p className="text-sm text-gray-600 mr-4">{message}</p>}
+          <button
+            onClick={handleSaveChanges}
+            className="px-4 py-2 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+          >
+            Save Changes
+          </button>
+        </div>
       </div>
     </div>
   );

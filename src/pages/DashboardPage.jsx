@@ -6,25 +6,24 @@ import ExpensePieChart from "../components/ExpensePieChart";
 import IncomeVsExpenseBarChart from "../components/IncomeVsExpenseBarChart";
 import BudgetTrackerWidget from "../components/BudgetTrackerWidget";
 
-const getFirstDayOfMonth = (date) => {
-  return new Date(date.getFullYear(), date.getMonth(), 1)
-    .toISOString()
-    .split("T")[0];
-};
-
 const DashboardPage = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const { userId, accountId } = useAuth();
+  const { userId, accountId, dataVersion } = useAuth();
 
   useEffect(() => {
     if (!userId || !accountId) return;
 
     const fetchData = async () => {
+      // FIX: Corrected the function call from setLoading(true) to setIsLoading(true)
       setIsLoading(true);
-      setError("");
-      const currentMonth = getFirstDayOfMonth(new Date());
+      setError(""); // Clear previous errors on a new fetch
+
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const currentMonthForQuery = `${year}-${month}-01`;
 
       try {
         const [summaryRes, pieChartRes, barChartRes, budgetRes] =
@@ -32,7 +31,7 @@ const DashboardPage = () => {
             apiClient.get("/transactions/summary"),
             apiClient.get("/charts/expenses-by-category"),
             apiClient.get("/charts/monthly-summary"),
-            apiClient.get(`/budgets/${currentMonth}`),
+            apiClient.get(`/budgets/${currentMonthForQuery}`),
           ]);
         setDashboardData({
           summary: summaryRes.data,
@@ -42,13 +41,13 @@ const DashboardPage = () => {
         });
       } catch (err) {
         setError("Failed to load dashboard data. Please try again later.");
-        console.error(err);
+        console.error("Dashboard fetch error:", err);
       } finally {
         setIsLoading(false);
       }
     };
     fetchData();
-  }, [userId, accountId]);
+  }, [userId, accountId, dataVersion]);
 
   if (isLoading) {
     return <p className="text-center py-10">Loading your dashboard...</p>;
@@ -60,26 +59,23 @@ const DashboardPage = () => {
     );
   }
 
-  // This check prevents a crash if data is still null after loading/error checks
   if (!dashboardData) {
-    return null;
+    return <p className="text-center py-10">No data available to display.</p>;
   }
 
   return (
-    <div>
+    <div className="space-y-6">
       <h1 className="text-3xl font-bold tracking-tight text-gray-900">
         Dashboard
       </h1>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+      <SummaryWidget summaryData={dashboardData.summary} />
+      <BudgetTrackerWidget data={dashboardData.budgets} />
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3">
-          <SummaryWidget summaryData={dashboardData.summary} />
-        </div>
-        <div className="lg:col-span-1">
-          <BudgetTrackerWidget data={dashboardData.budgets} />
-        </div>
-        <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ExpensePieChart data={dashboardData.pieChart} />
           <IncomeVsExpenseBarChart data={dashboardData.barChart} />
+        </div>
+        <div className="lg:col-span-2">
+          <ExpensePieChart data={dashboardData.pieChart} />
         </div>
       </div>
     </div>

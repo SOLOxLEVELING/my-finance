@@ -1,3 +1,5 @@
+require("dotenv").config(); // <-- Added this as the first line
+
 const express = require("express");
 const cors = require("cors");
 const transactionRoutes = require("./routes/transactions");

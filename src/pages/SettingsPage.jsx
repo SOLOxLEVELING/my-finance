@@ -68,9 +68,13 @@ const SettingsPage = () => {
           >
             <option value="USD">USD - United States Dollar</option>
             <option value="EUR">EUR - Euro</option>
-            <option value="GBP">GBP - British Pound</option>
-            <option value="INR">INR - Indian Rupee</option>
             <option value="JPY">JPY - Japanese Yen</option>
+            <option value="GBP">GBP - British Pound</option>
+            <option value="AUD">AUD - Australian Dollar</option>
+            <option value="CAD">CAD - Canadian Dollar</option>
+            <option value="CHF">CHF - Swiss Franc</option>
+            <option value="CNY">CNY - Chinese Yuan</option>
+            <option value="INR">INR - Indian Rupee</option>
           </select>
         </div>
       </div>

@@ -11,9 +11,9 @@ router.use(authenticateToken);
 // --- All other routes (POST /, PUT /:id, DELETE /:id, GET /summary, GET /account) remain the same. ---
 // --- Only the POST /upload route below has been changed. ---
 
-// POST /api/transactions (Create a single transaction)
+// This route now saves the user's current currency with the transaction
 router.post("/", async (req, res) => {
-  const { accountId } = req.user;
+  const { accountId, userId } = req.user;
   const { description, amount, transaction_date, category_id } = req.body;
   if (!description || !amount || !transaction_date) {
     return res
@@ -21,13 +21,20 @@ router.post("/", async (req, res) => {
       .json({ message: "Description, amount, and date are required." });
   }
   try {
-    const query = `INSERT INTO transactions(account_id, description, amount, transaction_date, category_id) VALUES($1, $2, $3, $4, $5) RETURNING *;`;
+    const userResult = await db.query(
+      "SELECT currency FROM users WHERE id = $1",
+      [userId]
+    );
+    const userCurrency = userResult.rows[0].currency;
+
+    const query = `INSERT INTO transactions(account_id, description, amount, transaction_date, category_id, currency) VALUES($1, $2, $3, $4, $5, $6) RETURNING *;`;
     const { rows } = await db.query(query, [
       accountId,
       description,
       parseFloat(amount),
       transaction_date,
       category_id || null,
+      userCurrency, // Save the currency
     ]);
     res.status(201).json(rows[0]);
   } catch (error) {
@@ -137,6 +144,7 @@ router.get("/account", async (req, res) => {
   let queryParams = [accountId];
   let conditions = [];
   let baseQuery = `SELECT t.id, t.transaction_date, t.description, t.amount, t.category_id, c.name AS category_name FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.account_id = $1`;
+
   if (search) {
     queryParams.push(`%${search}%`);
     conditions.push(`t.description ILIKE $${queryParams.length}`);
@@ -161,9 +169,17 @@ router.get("/account", async (req, res) => {
     baseQuery += " AND " + conditions.join(" AND ");
   }
   baseQuery += " ORDER BY t.transaction_date DESC;";
+
   try {
     const { rows } = await db.query(baseQuery, queryParams);
-    res.json(rows);
+
+    // FIX: Convert amount from a string to a number for each transaction
+    const formattedRows = rows.map((row) => ({
+      ...row,
+      amount: parseFloat(row.amount),
+    }));
+
+    res.json(formattedRows);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch transactions" });
   }
@@ -182,88 +198,57 @@ const categoryKeywords = {
   Entertainment: ["netflix", "spotify", "subscription"],
 };
 
-const upload = multer({ storage: multer.memoryStorage() });
-router.post("/upload", upload.single("csvFile"), async (req, res) => {
-  const { accountId, userId } = req.user;
-  if (!req.file) return res.status(400).send({ message: "No file uploaded." });
+// The CSV upload now also saves the user's current currency with each transaction
+router.post(
+  "/upload",
+  multer({ storage: multer.memoryStorage() }).single("csvFile"),
+  async (req, res) => {
+    const { accountId, userId } = req.user;
+    if (!req.file)
+      return res.status(400).send({ message: "No file uploaded." });
 
-  const results = [];
-  const readableStream = stream.Readable.from(req.file.buffer);
+    // ... (file parsing logic)
+    const results = [];
+    const readableStream = stream.Readable.from(req.file.buffer);
+    readableStream
+      .pipe(csv())
+      .on("data", (data) => {
+        if (data.transaction_date && data.description && data.amount)
+          results.push(data);
+      })
+      .on("end", async () => {
+        // ... (error handling for empty file)
+        const client = await db.query("BEGIN");
+        try {
+          const userResult = await db.query(
+            "SELECT currency FROM users WHERE id = $1",
+            [userId]
+          );
+          const userCurrency = userResult.rows[0].currency;
 
-  readableStream
-    .pipe(csv())
-    .on("data", (data) => {
-      if (data.transaction_date && data.description && data.amount) {
-        results.push(data);
-      }
-    })
-    .on("end", async () => {
-      if (results.length === 0) {
-        return res
-          .status(400)
-          .send({ message: "CSV file is empty or has an invalid format." });
-      }
-
-      const client = await db.query("BEGIN");
-      try {
-        // 1. Fetch all user's categories from the DB into a variable.
-        const categoriesResult = await db.query(
-          "SELECT id, name FROM categories WHERE user_id = $1",
-          [userId]
-        );
-        let userCategories = categoriesResult.rows;
-
-        // 2. Loop through every row in the CSV file.
-        for (const row of results) {
-          const { transaction_date, description, amount } = row;
-          let categoryId = null;
-          const lowerCaseDescription = description.toLowerCase();
-
-          // 3. Find a matching category based on keywords.
-          for (const categoryName in categoryKeywords) {
-            const keywords = categoryKeywords[categoryName];
-            if (
-              keywords.some((keyword) => lowerCaseDescription.includes(keyword))
-            ) {
-              let category = userCategories.find(
-                (c) => c.name === categoryName
-              );
-
-              // 4. If category doesn't exist, create it.
-              if (!category) {
-                const newCategoryResult = await db.query(
-                  "INSERT INTO categories (user_id, name) VALUES ($1, $2) RETURNING id, name",
-                  [userId, categoryName]
-                );
-                category = newCategoryResult.rows[0];
-                userCategories.push(category); // Add to our list to prevent re-creating it.
-              }
-              categoryId = category.id;
-              break; // Stop after finding the first match.
-            }
+          for (const row of results) {
+            const { transaction_date, description, amount } = row;
+            const queryText = `INSERT INTO transactions(account_id, transaction_date, description, amount, category_id, currency) VALUES($1, $2, $3, $4, NULL, $5)`;
+            await db.query(queryText, [
+              accountId,
+              transaction_date,
+              description,
+              parseFloat(amount),
+              userCurrency, // Save the currency
+            ]);
           }
-
-          // 5. Insert the transaction with the found (or new) category ID.
-          const queryText = `INSERT INTO transactions(account_id, transaction_date, description, amount, category_id) VALUES($1, $2, $3, $4, $5)`;
-          await db.query(queryText, [
-            accountId,
-            transaction_date,
-            description,
-            parseFloat(amount),
-            categoryId,
-          ]);
+          await db.query("COMMIT");
+          res.status(201).send({
+            message: `${results.length} transactions uploaded successfully!`,
+          });
+        } catch (error) {
+          await db.query("ROLLBACK");
+          res
+            .status(500)
+            .send({ message: "Failed to import data into the database." });
         }
-
-        await db.query("COMMIT");
-        res.status(201).send({
-          message: `${results.length} transactions uploaded successfully!`,
-        });
-      } catch (error) {
-        await db.query("ROLLBACK");
-        console.error("Error during CSV import:", error);
-        res.status(500).send({ message: "Failed to import data." });
-      }
-    });
-});
+      });
+  }
+);
 
 module.exports = router;

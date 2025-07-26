@@ -1,15 +1,15 @@
 import React from "react";
-import { useCurrency } from "../hooks/useCurrency"; // 1. Import the hook
+import { useCurrency } from "../hooks/useCurrency";
 
 const BudgetProgressBar = ({ categoryName, spent, budget }) => {
   const { format } = useCurrency();
   const percentage = budget > 0 ? (spent / budget) * 100 : 0;
   const isOverBudget = percentage > 100;
 
-  let barColor = "bg-green-500"; // Green
-  if (percentage > 75) barColor = "bg-yellow-400"; // Yellow
-  if (percentage > 90) barColor = "bg-orange-500"; // Orange
-  if (isOverBudget) barColor = "bg-red-600"; // Red
+  let barColor = "bg-green-500";
+  if (percentage > 75) barColor = "bg-yellow-400";
+  if (percentage > 90) barColor = "bg-orange-500";
+  if (isOverBudget) barColor = "bg-red-600";
 
   return (
     <div>
@@ -18,7 +18,7 @@ const BudgetProgressBar = ({ categoryName, spent, budget }) => {
           {categoryName}
         </span>
         <span className="text-sm text-gray-500">
-          {format(Math.abs(spent))} / {format(budget)}
+          {format(spent)} / {format(budget)}
         </span>
       </div>
       <div className="w-full bg-gray-200 rounded-full h-2.5">
@@ -32,9 +32,11 @@ const BudgetProgressBar = ({ categoryName, spent, budget }) => {
 };
 
 const BudgetTrackerWidget = ({ data }) => {
-  const budgetedItems = data.filter((item) => item.budgetAmount > 0);
+  // FIX: Changed this line to filter for any item that has a budget set,
+  // regardless of whether there has been spending yet.
+  const budgetedItems = data.filter((item) => item.budgetAmountUSD > 0);
 
-  if (budgetedItems.length === 0) {
+  if (!data || budgetedItems.length === 0) {
     return (
       <div className="p-6 bg-white rounded-lg shadow-md h-full flex items-center justify-center">
         <p className="text-gray-500">No budgets set for this month.</p>
@@ -52,8 +54,8 @@ const BudgetTrackerWidget = ({ data }) => {
           <BudgetProgressBar
             key={item.categoryId}
             categoryName={item.categoryName}
-            spent={item.spentAmount} // Note: spentAmount from API is already positive
-            budget={item.budgetAmount}
+            spent={item.spentAmountUSD}
+            budget={item.budgetAmountUSD}
           />
         ))}
       </div>
