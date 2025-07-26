@@ -1,10 +1,7 @@
 transaction_date,description,amount
-2025-08-05,"Paycheck - August",5100.00
-2025-08-06,"Amazon.com Purchase",-78.99
-2025-08-08,"Starbucks Coffee",-6.50
-2025-08-15,"Shell Gas Station",-55.40
-2025-08-20,"Netflix Subscription",-15.99
-2025-09-05,"Paycheck - September",5100.00
-2025-09-10,"Whole Foods Market",-180.25
-2025-09-12,"Lyft Ride",-22.80
-2025-09-18,"Spotify Premium",-10.99
+2025-07-01,Salary,5000
+2025-07-02,Groceries,-150.75
+2025-07-03,Electric Bill,-90.50
+2025-07-04,Coffee,-4.99
+2025-07-05,Rent,-1200
+2025-07-06,Internet,-45

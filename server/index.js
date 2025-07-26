@@ -4,12 +4,17 @@ const transactionRoutes = require("./routes/transactions");
 const categoryRoutes = require("./routes/categories");
 const chartRoutes = require("./routes/charts"); // <-- Import chart routes
 const budgetRoutes = require("./routes/budgets"); // <-- Import budget routes
+const authRoutes = require("./routes/auth"); // <-- Import auth routes
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+// Public routes (no authentication needed)
+app.use('/api/auth', authRoutes); // <-- Register auth routes
+
 
 // API Routes
 app.use("/api/transactions", transactionRoutes);

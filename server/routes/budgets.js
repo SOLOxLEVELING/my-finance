@@ -1,8 +1,10 @@
 const express = require("express");
 const db = require("../db");
+const authenticateToken = require("../middleware/authenticateToken");
 const router = express.Router();
 
-// This query joins categories, budgets, and transaction spending for a given month
+router.use(authenticateToken);
+
 const getBudgetQuery = `
   WITH user_categories AS (
     SELECT id, name FROM categories WHERE user_id = $1
@@ -19,7 +21,6 @@ const getBudgetQuery = `
     WHERE
       a.user_id = $1
       AND t.amount < 0
-      -- Use a more reliable date range check instead of DATE_TRUNC
       AND t.transaction_date >= $2 AND t.transaction_date < ($2::date + interval '1 month')
     GROUP BY t.category_id
   )
@@ -34,13 +35,11 @@ const getBudgetQuery = `
   ORDER BY uc.name;
 `;
 
-// GET /api/budgets/:userId/:month
-// Fetches budget data (budgeted vs. spent) for a user and month (YYYY-MM-DD)
-router.get("/:userId/:month", async (req, res) => {
-  const { userId, month } = req.params; // month should be like '2025-07-01'
+router.get("/:month", async (req, res) => {
+  const { month } = req.params;
+  const { userId } = req.user;
   try {
     const { rows } = await db.query(getBudgetQuery, [userId, month]);
-    // Convert numeric types from string to number
     const formattedData = rows.map((row) => ({
       ...row,
       budgetAmount: parseFloat(row.budgetAmount),
@@ -53,17 +52,10 @@ router.get("/:userId/:month", async (req, res) => {
   }
 });
 
-// POST /api/budgets
-// Creates or updates a budget for a category (UPSERT)
 router.post("/", async (req, res) => {
-  const { userId, categoryId, amount, month } = req.body;
-  const query = `
-    INSERT INTO budgets (user_id, category_id, amount, month)
-    VALUES ($1, $2, $3, $4)
-    ON CONFLICT (user_id, category_id, month)
-    DO UPDATE SET amount = EXCLUDED.amount
-    RETURNING *;
-  `;
+  const { categoryId, amount, month } = req.body;
+  const { userId } = req.user;
+  const query = `INSERT INTO budgets (user_id, category_id, amount, month) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, category_id, month) DO UPDATE SET amount = EXCLUDED.amount RETURNING *;`;
   try {
     const { rows } = await db.query(query, [
       userId,

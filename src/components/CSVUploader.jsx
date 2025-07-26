@@ -21,6 +21,14 @@ const CSVUploader = () => {
       return;
     }
 
+    const token = localStorage.getItem("token"); // 👈 get the token
+
+    if (!token) {
+      setMessage("Not authenticated. Please login again.");
+      setIsError(true);
+      return;
+    }
+
     const formData = new FormData();
     formData.append("csvFile", file);
 
@@ -29,14 +37,13 @@ const CSVUploader = () => {
     setIsError(false);
 
     try {
-      // The backend is running on port 3001
-      // NEW - Correct Path
       const response = await axios.post(
         "http://localhost:3001/api/transactions/upload",
         formData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`, // 👈 set the token here
           },
         }
       );
