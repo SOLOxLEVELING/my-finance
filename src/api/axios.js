@@ -1,9 +1,10 @@
 import axios from "axios";
 
 const apiClient = axios.create({
-  baseURL: "http://localhost:3001/api",
-});
-
+    baseURL: "http://localhost:3001/api",
+    withCredentials: true, // ✅ matches backend CORS
+  });
+  
 // Attach the token to every request if available
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");

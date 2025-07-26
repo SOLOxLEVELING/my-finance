@@ -1,137 +1,145 @@
 const express = require("express");
 const db = require("../db");
 const authenticateToken = require("../middleware/authenticateToken");
-const router = express.Router();
+const axios = require("axios");
 
+const router = express.Router();
 router.use(authenticateToken);
 
+async function getLiveRates() {
+  const apiKey = process.env.EXCHANGERATE_API_KEY;
+  const url = `https://v6.exchangerate-api.com/v6/${apiKey}/latest/USD`;
+  const response = await axios.get(url);
+  if (response.data?.result === "success")
+    return response.data.conversion_rates;
+  throw new Error("Failed to fetch exchange rates");
+}
+
+// ✅ GET budgets
 router.get("/:month", async (req, res) => {
   const { month } = req.params;
   const { userId } = req.user;
 
-  // These rates are used to convert all amounts to a common base (USD) for calculation
-  const RATES = {
-    USD: 1.0,
-    EUR: 0.92,
-    GBP: 0.79,
-    INR: 86.46,
-    JPY: 157.65,
-    AUD: 1.5,
-    CAD: 1.37,
-    CHF: 0.9,
-    CNY: 7.25,
-  };
-
   try {
-    // Step 1: Get all of the user's categories
-    const categoriesResult = await db.query(
-      "SELECT id, name FROM categories WHERE user_id = $1 ORDER BY name",
+    const categories = await db.query(
+      "SELECT id, name FROM categories WHERE user_id=$1 ORDER BY name",
       [userId]
     );
-    if (categoriesResult.rows.length === 0) {
-      return res.json([]); // No categories, so no budgets to show
-    }
 
-    // Step 2: Get all budgets for the chosen month
-    const budgetsResult = await db.query(
-      "SELECT category_id, amount, currency FROM budgets WHERE user_id = $1 AND month = $2",
+    const budgets = await db.query(
+      "SELECT category_id, amount, currency, amount_usd FROM budgets WHERE user_id=$1 AND month::date=$2::date",
       [userId, month]
     );
-    // Create a simple map for easy lookup
-    const budgetsMap = new Map(
-      budgetsResult.rows.map((b) => [
-        b.category_id,
-        { amount: parseFloat(b.amount), currency: b.currency },
-      ])
+
+    const map = new Map(
+      budgets.rows.map((b) => [parseInt(b.category_id, 10), b])
     );
 
-    // Step 3: Get all spending transactions for the chosen month
-    const spendingResult = await db.query(
-      `SELECT t.category_id, t.amount, t.currency 
+    // ... inside the GET /:month route ...
+    const spending = await db.query(
+      `SELECT t.category_id, t.amount_usd
        FROM transactions t
-       JOIN accounts a ON t.account_id = a.id
-       WHERE a.user_id = $1 AND t.amount < 0 AND t.transaction_date >= $2 AND t.transaction_date < ($2::date + '1 month'::interval)`,
+       JOIN accounts a ON t.account_id=a.id
+       WHERE a.user_id=$1
+       AND t.transaction_date >= $2
+       AND t.transaction_date < ($2::date + '1 month'::interval)
+       AND t.amount < 0`, // --- FIX: Add this line to count only expenses ---
       [userId, month]
     );
-    // Create a map of total spending (in USD) per category
-    const spendingMap = new Map();
-    for (const tx of spendingResult.rows) {
-      const rate = RATES[tx.currency] || 1;
-      const spentInUSD = Math.abs(parseFloat(tx.amount)) / rate;
-      const currentSpent = spendingMap.get(tx.category_id) || 0;
-      spendingMap.set(tx.category_id, currentSpent + spentInUSD);
-    }
+    // ...
 
-    // Step 4: Combine all data together
-    const finalBudgetData = categoriesResult.rows.map((category) => {
-      const budget = budgetsMap.get(category.id) || {
+    console.log("Spending rows:", spending.rows);
+
+    const spentMap = new Map();
+    spending.rows.forEach((tx) => {
+      const spent = Math.abs(parseFloat(tx.amount_usd));
+      spentMap.set(tx.category_id, (spentMap.get(tx.category_id) || 0) + spent);
+    });
+
+    const result = categories.rows.map((cat) => {
+      const b = map.get(cat.id) || {
         amount: 0,
         currency: "USD",
+        amount_usd: 0,
       };
-      const budgetRate = RATES[budget.currency] || 1;
-      const budgetInUSD = budget.amount / budgetRate;
-      const spentInUSD = spendingMap.get(category.id) || 0;
+
+      // BUG: This console.log is in the wrong place.
+      // It logs the `result` array on the first iteration when it's still empty or incomplete.
+      // console.log("Final budgets result:", result); // <--- THIS IS THE BUG
 
       return {
-        categoryId: category.id,
-        categoryName: category.name,
-        // For the Edit Page
-        budgetAmountOriginal: budget.amount,
-        budgetCurrency: budget.currency,
-        // For the Dashboard Widget (all in USD)
-        budgetAmountUSD: budgetInUSD,
-        spentAmountUSD: spentInUSD,
+        categoryId: cat.id,
+        categoryName: cat.name,
+        budgetAmountOriginal: parseFloat(b.amount),
+        budgetCurrency: b.currency,
+        budgetAmountUSD: parseFloat(b.amount_usd),
+        spentAmountUSD: spentMap.get(cat.id) || 0,
       };
     });
 
-    res.json(finalBudgetData);
-  } catch (error) {
-    console.error("Error fetching budget data:", error);
-    res.status(500).json({ message: "Failed to fetch budget data" });
+    // FIX: Move the console.log here to correctly log the final array
+    // after it has been fully constructed.
+    console.log("Final budgets result:", result);
+
+    res.json(result);
+  } catch (err) {
+    console.error("GET budgets error:", err.message);
+    res.status(500).json({ message: "Failed to fetch budgets" });
   }
 });
 
-// The /bulk-update route remains the same and is correct.
+// ✅ BULK UPDATE budgets
 router.post("/bulk-update", async (req, res) => {
-  const { budgets, month } = req.body;
-  const { userId } = req.user;
-
-  if (!Array.isArray(budgets) || !month) {
-    return res.status(400).json({ message: "Invalid data format." });
-  }
-
-  const userResult = await db.query(
-    "SELECT currency FROM users WHERE id = $1",
-    [userId]
-  );
-  const userCurrency = userResult.rows[0].currency;
-
-  const client = await db.query("BEGIN");
-  try {
-    const query = `
-      INSERT INTO budgets (user_id, category_id, amount, month, currency) 
-      VALUES ($1, $2, $3, $4, $5) 
-      ON CONFLICT (user_id, category_id, month) 
-      DO UPDATE SET amount = EXCLUDED.amount, currency = EXCLUDED.currency;
-    `;
-
-    for (const budget of budgets) {
-      await db.query(query, [
-        userId,
-        budget.categoryId,
-        parseFloat(budget.amount) || 0,
-        month,
-        userCurrency,
-      ]);
+    const { budgets, month } = req.body;
+    const { userId } = req.user;
+  
+    if (!Array.isArray(budgets) || !month) {
+      return res.status(400).json({ message: "Invalid data format" });
     }
-
-    await db.query("COMMIT");
-    res.status(200).json({ message: "Budgets saved successfully." });
-  } catch (error) {
-    await db.query("ROLLBACK");
-    console.error("Error during budget bulk update:", error);
-    res.status(500).json({ message: "Failed to save budgets." });
-  }
-});
+  
+    try {
+      const user = await db.query("SELECT currency FROM users WHERE id=$1", [
+        userId,
+      ]);
+      const userCurrency = user.rows[0]?.currency || "USD";
+  
+      const rates = await getLiveRates();
+      const rate = rates[userCurrency];
+  
+      await db.query("BEGIN");
+  
+      const query = `
+        INSERT INTO budgets (user_id, category_id, amount, currency, amount_usd, month)
+        VALUES ($1,$2,$3,$4,$5,$6)
+        ON CONFLICT (user_id,category_id,month)
+        DO UPDATE SET amount=$3, currency=$4, amount_usd=$5;
+      `;
+  
+      for (const b of budgets) {
+        const amount = parseFloat(b.amount) || 0;
+        if (isNaN(amount)) continue;
+  
+        // --- FIX: The problematic line has been removed ---
+  
+        const amountInUSD = rate ? amount / rate : amount;
+  
+        await db.query(query, [
+          userId,
+          b.categoryId,
+          amount,
+          userCurrency,
+          amountInUSD,
+          month,
+        ]);
+      }
+  
+      await db.query("COMMIT");
+      res.json({ message: "Budgets saved" });
+    } catch (err) {
+      await db.query("ROLLBACK");
+      console.error("Bulk-update budgets error:", err.message);
+      res.status(500).json({ message: "Failed to save budgets" });
+    }
+  });
 
 module.exports = router;

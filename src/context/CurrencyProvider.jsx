@@ -13,11 +13,11 @@ export const CurrencyProvider = ({ children }) => {
     const fetchRates = async () => {
       try {
         const response = await apiClient.get("/rates");
+        console.log("Fetched rates:", response.data);
         setRates(response.data.rates);
-      } catch (error) {
-        console.error("Failed to fetch currency rates", error);
-        // Fallback to USD only if rates fail
-        setRates({ USD: 1.0 });
+      } catch (err) {
+        console.error("Rates fetch failed:", err);
+        setRates(null);
       } finally {
         setLoading(false);
       }

@@ -5,20 +5,29 @@ import SummaryWidget from "../components/SummaryWidget";
 import ExpensePieChart from "../components/ExpensePieChart";
 import IncomeVsExpenseBarChart from "../components/IncomeVsExpenseBarChart";
 import BudgetTrackerWidget from "../components/BudgetTrackerWidget";
+import { useCurrencyRates } from "../context/CurrencyProvider";
 
 const DashboardPage = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const { userId, accountId, dataVersion } = useAuth();
+
+  // --- FIX START ---
+  // Get the currency from the Auth Context, along with other user data
+  const { userId, accountId, dataVersion, currency } = useAuth();
+  // --- FIX END ---
+
+  const { rates, loading } = useCurrencyRates();
+
+  // The old hardcoded line has been removed.
 
   useEffect(() => {
-    if (!userId || !accountId) return;
+    // Also, add 'currency' to the dependency check
+    if (!userId || !accountId || !currency) return;
 
     const fetchData = async () => {
-      // FIX: Corrected the function call from setLoading(true) to setIsLoading(true)
       setIsLoading(true);
-      setError(""); // Clear previous errors on a new fetch
+      setError("");
 
       const today = new Date();
       const year = today.getFullYear();
@@ -47,7 +56,7 @@ const DashboardPage = () => {
       }
     };
     fetchData();
-  }, [userId, accountId, dataVersion]);
+  }, [userId, accountId, dataVersion, currency]); // Add currency to dependency array
 
   if (isLoading) {
     return <p className="text-center py-10">Loading your dashboard...</p>;
@@ -69,7 +78,10 @@ const DashboardPage = () => {
         Dashboard
       </h1>
       <SummaryWidget summaryData={dashboardData.summary} />
-      <BudgetTrackerWidget data={dashboardData.budgets} />
+      <BudgetTrackerWidget
+        budgets={dashboardData?.budgets || []}
+        currency={currency} // Pass the dynamic currency to the widget
+      />
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3">
           <IncomeVsExpenseBarChart data={dashboardData.barChart} />

@@ -5,13 +5,23 @@ const stream = require("stream");
 const db = require("../db");
 const authenticateToken = require("../middleware/authenticateToken");
 const router = express.Router();
+const axios = require("axios");
 
 router.use(authenticateToken);
 
-// --- All other routes (POST /, PUT /:id, DELETE /:id, GET /summary, GET /account) remain the same. ---
-// --- Only the POST /upload route below has been changed. ---
+// --- Helper function to get exchange rates ---
+async function getLiveRates() {
+  const apiKey = process.env.EXCHANGERATE_API_KEY;
+  if (!apiKey) throw new Error("API key not configured.");
+  const url = `https://v6.exchangerate-api.com/v6/${apiKey}/latest/USD`;
+  const response = await axios.get(url);
+  if (response.data?.result === "success") {
+    return response.data.conversion_rates;
+  }
+  throw new Error("Failed to fetch exchange rates");
+}
 
-// This route now saves the user's current currency with the transaction
+// --- FIX: This route now correctly calculates and saves amount_usd ---
 router.post("/", async (req, res) => {
   const { accountId, userId } = req.user;
   const { description, amount, transaction_date, category_id } = req.body;
@@ -25,32 +35,44 @@ router.post("/", async (req, res) => {
       "SELECT currency FROM users WHERE id = $1",
       [userId]
     );
-    const userCurrency = userResult.rows[0].currency;
+    const userCurrency = userResult.rows[0].currency || "USD";
 
-    const query = `INSERT INTO transactions(account_id, description, amount, transaction_date, category_id, currency) VALUES($1, $2, $3, $4, $5, $6) RETURNING *;`;
+    // --- Start of new logic ---
+    const rates = await getLiveRates();
+    const rate = rates[userCurrency];
+    if (!rate) {
+      return res
+        .status(400)
+        .json({ message: `Currency ${userCurrency} not supported.` });
+    }
+    const amountInUSD = parseFloat(amount) / rate;
+    // --- End of new logic ---
+
+    const query = `INSERT INTO transactions(account_id, description, amount, transaction_date, category_id, currency, amount_usd) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *;`;
     const { rows } = await db.query(query, [
       accountId,
       description,
       parseFloat(amount),
       transaction_date,
       category_id || null,
-      userCurrency, // Save the currency
+      userCurrency,
+      amountInUSD, // Save the converted amount
     ]);
     res.status(201).json(rows[0]);
   } catch (error) {
+    console.error("Transaction creation error:", error);
     res.status(500).json({ message: "Failed to create transaction" });
   }
 });
 
-// PUT /api/transactions/:id (The single, correct update route)
+// --- FIX: This route now correctly recalculates amount_usd on update ---
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
   const { userId } = req.user;
 
   try {
-    // First, verify the user owns this transaction
     const ownershipCheck = await db.query(
-      "SELECT t.id FROM transactions t JOIN accounts a ON t.account_id = a.id WHERE t.id = $1 AND a.user_id = $2",
+      "SELECT t.id, t.currency FROM transactions t JOIN accounts a ON t.account_id = a.id WHERE t.id = $1 AND a.user_id = $2",
       [id, userId]
     );
 
@@ -60,19 +82,33 @@ router.put("/:id", async (req, res) => {
         .json({ message: "Transaction not found or permission denied." });
     }
 
-    // Dynamically build the update query
+    const { categoryId, amount, description, transaction_date } = req.body;
     let setClauses = [];
     let queryParams = [];
     let paramIndex = 1;
-    const { categoryId, amount, description, transaction_date } = req.body;
+
+    // --- Start of new logic ---
+    if (amount !== undefined) {
+      const transactionCurrency = ownershipCheck.rows[0].currency;
+      const rates = await getLiveRates();
+      const rate = rates[transactionCurrency];
+      if (!rate) {
+        return res
+          .status(400)
+          .json({ message: `Currency ${transactionCurrency} not supported.` });
+      }
+      const amountInUSD = parseFloat(amount) / rate;
+
+      queryParams.push(parseFloat(amount));
+      setClauses.push(`amount = $${paramIndex++}`);
+      queryParams.push(amountInUSD);
+      setClauses.push(`amount_usd = $${paramIndex++}`);
+    }
+    // --- End of new logic ---
 
     if (categoryId !== undefined) {
       queryParams.push(categoryId === "" ? null : categoryId);
       setClauses.push(`category_id = $${paramIndex++}`);
-    }
-    if (amount !== undefined) {
-      queryParams.push(parseFloat(amount));
-      setClauses.push(`amount = $${paramIndex++}`);
     }
     if (description !== undefined) {
       queryParams.push(description);
@@ -99,6 +135,8 @@ router.put("/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to update transaction" });
   }
 });
+
+// --- Other routes (DELETE, GET /summary, GET /account, POST /upload) remain the same ---
 
 // DELETE /api/transactions/:id
 router.delete("/:id", async (req, res) => {
@@ -172,33 +210,17 @@ router.get("/account", async (req, res) => {
 
   try {
     const { rows } = await db.query(baseQuery, queryParams);
-
-    // FIX: Convert amount from a string to a number for each transaction
     const formattedRows = rows.map((row) => ({
       ...row,
       amount: parseFloat(row.amount),
     }));
-
     res.json(formattedRows);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch transactions" });
   }
 });
 
-// --- NEW AND IMPROVED UPLOAD LOGIC ---
-
-// A map of keywords to link descriptions to category names.
-// You can expand this list with more keywords and categories.
-const categoryKeywords = {
-  Salary: ["paycheck"],
-  Shopping: ["amazon", "purchase"],
-  Dining: ["starbucks", "lyft", "coffee"],
-  Groceries: ["whole foods", "market"],
-  Fuel: ["shell gas", "station"],
-  Entertainment: ["netflix", "spotify", "subscription"],
-};
-
-// The CSV upload now also saves the user's current currency with each transaction
+// POST /upload
 router.post(
   "/upload",
   multer({ storage: multer.memoryStorage() }).single("csvFile"),
@@ -207,45 +229,90 @@ router.post(
     if (!req.file)
       return res.status(400).send({ message: "No file uploaded." });
 
-    // ... (file parsing logic)
     const results = [];
     const readableStream = stream.Readable.from(req.file.buffer);
+
+    const categoryKeywords = {
+      Salary: ["salary", "paycheck"],
+      Groceries: ["supermarket", "grocery", "walmart", "whole foods"],
+      Dining: ["restaurant", "cafe", "coffee", "starbucks", "food"],
+      Shopping: ["amazon", "purchase", "mall", "flipkart"],
+      Fuel: ["petrol", "gas", "fuel", "shell"],
+      Entertainment: ["netflix", "spotify", "cinema", "movie"],
+      Bills: ["electricity", "water", "internet", "mobile"],
+    };
+
+    function guessCategory(description) {
+      const text = description.toLowerCase();
+      for (const [cat, keywords] of Object.entries(categoryKeywords)) {
+        if (keywords.some((word) => text.includes(word))) return cat;
+      }
+      return "Uncategorized";
+    }
+
     readableStream
       .pipe(csv())
-      .on("data", (data) => {
-        if (data.transaction_date && data.description && data.amount)
-          results.push(data);
+      .on("data", (row) => {
+        if (row.transaction_date && row.description && row.amount)
+          results.push(row);
       })
       .on("end", async () => {
-        // ... (error handling for empty file)
-        const client = await db.query("BEGIN");
+        if (results.length === 0) {
+          return res
+            .status(400)
+            .send({ message: "CSV file is empty or invalid." });
+        }
         try {
+          await db.query("BEGIN");
           const userResult = await db.query(
             "SELECT currency FROM users WHERE id = $1",
             [userId]
           );
           const userCurrency = userResult.rows[0].currency;
-
+          const rates = await getLiveRates();
           for (const row of results) {
             const { transaction_date, description, amount } = row;
-            const queryText = `INSERT INTO transactions(account_id, transaction_date, description, amount, category_id, currency) VALUES($1, $2, $3, $4, NULL, $5)`;
-            await db.query(queryText, [
-              accountId,
-              transaction_date,
-              description,
-              parseFloat(amount),
-              userCurrency, // Save the currency
-            ]);
+            let categoryName =
+              row.category && row.category.trim() !== ""
+                ? row.category.trim()
+                : guessCategory(description);
+            const existing = await db.query(
+              "SELECT id FROM categories WHERE user_id=$1 AND name=$2",
+              [userId, categoryName]
+            );
+            let categoryId;
+            if (existing.rows.length > 0) {
+              categoryId = existing.rows[0].id;
+            } else {
+              const inserted = await db.query(
+                "INSERT INTO categories (user_id, name) VALUES ($1, $2) RETURNING id",
+                [userId, categoryName]
+              );
+              categoryId = inserted.rows[0].id;
+            }
+            const amountInUSD = parseFloat(amount) / (rates[userCurrency] || 1);
+            await db.query(
+              `INSERT INTO transactions (account_id, transaction_date, description, amount, currency, amount_usd, category_id)
+   VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+              [
+                accountId,
+                transaction_date,
+                description,
+                parseFloat(amount),
+                userCurrency,
+                amountInUSD,
+                categoryId,
+              ]
+            );
           }
           await db.query("COMMIT");
           res.status(201).send({
             message: `${results.length} transactions uploaded successfully!`,
           });
-        } catch (error) {
+        } catch (err) {
           await db.query("ROLLBACK");
-          res
-            .status(500)
-            .send({ message: "Failed to import data into the database." });
+          console.error("CSV Upload Error:", err);
+          res.status(500).send({ message: "Failed to import data." });
         }
       });
   }

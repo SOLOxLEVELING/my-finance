@@ -2,12 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import apiClient from "../api/axios";
 import { useCurrency } from "../hooks/useCurrency";
+import { useCurrencyRates } from "../context/CurrencyProvider";
 
 const BudgetSetupPage = () => {
   const [budgetData, setBudgetData] = useState([]);
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [message, setMessage] = useState("");
-  const { symbol } = useCurrency();
+  const { symbol, currency } = useCurrency();
+  const { rates, loading } = useCurrencyRates();
   const { refreshData } = useAuth();
 
   const fetchBudgetData = async (currentMonth) => {
@@ -24,12 +26,10 @@ const BudgetSetupPage = () => {
     fetchBudgetData(month);
   }, [month]);
 
-  // FIX #1: This function now correctly updates the 'budgetAmountOriginal' property
   const handleInputChange = (categoryId, amount) => {
-    // Allow the input to be temporarily empty while typing
     if (amount === "") {
-      setBudgetData(
-        budgetData.map((item) =>
+      setBudgetData((prev) =>
+        prev.map((item) =>
           item.categoryId === categoryId
             ? { ...item, budgetAmountOriginal: "" }
             : item
@@ -38,8 +38,8 @@ const BudgetSetupPage = () => {
       return;
     }
     const newAmount = parseFloat(amount);
-    setBudgetData(
-      budgetData.map((item) =>
+    setBudgetData((prev) =>
+      prev.map((item) =>
         item.categoryId === categoryId
           ? { ...item, budgetAmountOriginal: isNaN(newAmount) ? 0 : newAmount }
           : item
@@ -48,17 +48,24 @@ const BudgetSetupPage = () => {
   };
 
   const handleSaveChanges = async () => {
-    setMessage("");
+    if (loading || !rates) {
+      setMessage("Error: Currency rates not loaded yet.");
+      return;
+    }
+
     try {
       const payload = {
-        // FIX #2: Ensure the payload sends the correct property
-        budgets: budgetData.map(({ categoryId, budgetAmountOriginal }) => ({
-          categoryId,
-          amount: budgetAmountOriginal || 0,
-        })),
+        budgets: budgetData.map(({ categoryId, budgetAmountOriginal }) => {
+          return {
+            categoryId,
+            amount: parseFloat(budgetAmountOriginal) || 0, // original
+          };
+        }),
         month: `${month}-01`,
       };
+
       await apiClient.post("/budgets/bulk-update", payload);
+
       setMessage("Budgets saved successfully!");
       refreshData();
       setTimeout(() => setMessage(""), 3000);

@@ -12,7 +12,12 @@ const ratesRoutes = require("./routes/rates"); // <-- Import new route
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+const corsOptions = {
+  origin: "http://localhost:5173", // ✅ Your frontend URL
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Public routes (no authentication needed)

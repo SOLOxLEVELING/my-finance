@@ -62,6 +62,8 @@ router.post("/login", async (req, res) => {
       .json({ message: "Email and password are required." });
   }
 
+  // ... inside the POST /api/auth/login route
+
   try {
     // Find the user by email
     // --- In your /login route ---
@@ -69,11 +71,12 @@ router.post("/login", async (req, res) => {
     const userQuery = `
             SELECT u.id as "userId", u.password_hash, a.id as "accountId", u.currency
             FROM users u
-            JOIN accounts a ON u.id = a.user_id
+            LEFT JOIN accounts a ON u.id = a.user_id
             WHERE u.email = $1
             LIMIT 1;
-            `;
+            `; // --- FIX: Changed JOIN to LEFT JOIN
     const userResult = await db.query(userQuery, [email]);
+    // ...
 
     if (userResult.rows.length === 0) {
       return res.status(401).json({ message: "Invalid credentials." });
