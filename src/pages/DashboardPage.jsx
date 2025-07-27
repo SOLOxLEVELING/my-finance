@@ -6,6 +6,7 @@ import ExpensePieChart from "../components/ExpensePieChart";
 import IncomeVsExpenseBarChart from "../components/IncomeVsExpenseBarChart";
 import BudgetTrackerWidget from "../components/BudgetTrackerWidget";
 import { useCurrencyRates } from "../context/CurrencyProvider";
+import ForecastWidget from "../components/ForecastWidget"; // <-- Import the new widget
 
 const DashboardPage = () => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -78,6 +79,7 @@ const DashboardPage = () => {
         Dashboard
       </h1>
       <SummaryWidget summaryData={dashboardData.summary} />
+      <ForecastWidget />
       <BudgetTrackerWidget
         budgets={dashboardData?.budgets || []}
         currency={currency} // Pass the dynamic currency to the widget

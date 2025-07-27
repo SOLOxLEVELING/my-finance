@@ -8,6 +8,7 @@ const chartRoutes = require("./routes/charts"); // <-- Import chart routes
 const budgetRoutes = require("./routes/budgets"); // <-- Import budget routes
 const authRoutes = require("./routes/auth"); // <-- Import auth routes
 const ratesRoutes = require("./routes/rates"); // <-- Import new route
+const forecastRoutes = require("./routes/forecasts"); // <-- Import the new route
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -22,6 +23,7 @@ app.use(express.json());
 
 // Public routes (no authentication needed)
 app.use("/api/auth", authRoutes); // <-- Register auth routes
+app.use("/api/forecasts", forecastRoutes); // <-- Register the new route
 
 // API Routes
 app.use("/api/transactions", transactionRoutes);
