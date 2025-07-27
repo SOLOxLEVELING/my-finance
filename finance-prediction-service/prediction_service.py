@@ -89,4 +89,4 @@ def predict():
 if __name__ == '__main__':
     # Runs on port 5000 by default.
     # The debug=True flag allows you to see errors and automatically reloads the server when you save changes.
-    app.run(debug=True, port=5001) # <-- CHANGE THIS LINE
+    app.run(host='0.0.0.0', debug=True, port=5001) # <-- CHANGE THIS LINE

@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  # The Node.js Server
+  server:
+    build: ./server
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./server/.env # <-- ADD THIS LINE
+    environment:
+      # These variables should match the 'db' service below
+      DATABASE_URL: postgresql://myuser:mypassword@db:5432/mydatabase
+    depends_on:
+      - db
+
+  # The Python Prediction Service
+  prediction-service:
+    build: ./finance-prediction-service
+    ports:
+      - "5001:5001"
+
+  # The React Client
+  client:
+    build: .
+    ports:
+      - "5173:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf # <-- ADD THIS LINE
+    depends_on:
+      - server
+
+  # The PostgreSQL Database Service
+  db:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydatabase
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./server/db:/docker-entrypoint-initdb.d # <-- ADDED THIS LINE
+    ports:
+      - "5433:5432" # <-- CHANGE THIS LINE
+
+volumes:
+  postgres_data:

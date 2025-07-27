@@ -1,13 +1,11 @@
 require("dotenv").config();
 const { Pool } = require("pg");
 
-// Replace with your PostgreSQL connection details
 const pool = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "myFinance",
-  password: process.env.DB_PASS,
-  port: 5432,
+  // The connectionString is the only property needed.
+  // It will be read from the .env file for local development,
+  // or from the environment variables provided by Docker Compose when running in a container.
+  connectionString: process.env.DATABASE_URL,
 });
 
 module.exports = {

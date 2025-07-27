@@ -8,7 +8,8 @@ router.use(authenticateToken);
 
 router.get("/", async (req, res) => {
   const { userId } = req.user;
-  const pythonServiceUrl = "http://localhost:5001/predict"; // <-- CHANGE THIS LINE
+  // CHANGE THIS LINE: Use the Docker service name instead of localhost
+  const pythonServiceUrl = "http://prediction-service:5001/predict";
 
   try {
     // 1. Fetch historical data for the user from your database
