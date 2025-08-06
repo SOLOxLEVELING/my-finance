@@ -1,0 +1,173 @@
+transaction_date,description,amount,category
+2025-01-01,Starbucks coffee,-26.11,Dining
+2025-01-01,Netflix monthly subscription,-15.99,Entertainment
+2025-01-01,Rent payment,-1500.0,Bills
+2025-01-05,Grocery store purchase,-82.93,Groceries
+2025-01-05,Starbucks coffee,-38.69,Dining
+2025-01-07,Restaurant meal,-26.11,Dining
+2025-01-10,Cafe lunch,-14.11,Dining
+2025-01-10,Internet bill payment,-60.51,Bills
+2025-01-11,Starbucks coffee,-7.63,Dining
+2025-01-11,Mall purchase,-169.84,Shopping
+2025-01-11,Walmart purchase,-124.74,Groceries
+2025-01-12,Grocery store purchase,-119.28,Groceries
+2025-01-12,Restaurant meal,-17.99,Dining
+2025-01-13,Grocery store purchase,-41.83,Groceries
+2025-01-13,Starbucks coffee,-22.18,Dining
+2025-01-14,Walmart purchase,-63.21,Groceries
+2025-01-14,Cafe lunch,-47.25,Dining
+2025-01-15,Spotify monthly subscription,-10.99,Entertainment
+2025-01-17,Starbucks coffee,-43.56,Dining
+2025-01-19,Restaurant meal,-28.93,Dining
+2025-01-21,Walmart purchase,-63.53,Groceries
+2025-01-22,Starbucks coffee,-30.99,Dining
+2025-01-22,Grocery store purchase,-65.33,Groceries
+2025-01-24,Walmart purchase,-48.23,Groceries
+2025-01-25,Monthly paycheck deposit,5500.0,Salary
+2025-01-25,Shell gas fill-up,-47.7,Fuel
+2025-01-25,Mall purchase,-189.84,Shopping
+2025-01-26,Grocery store purchase,-106.76,Groceries
+2025-01-28,Grocery store purchase,-40.83,Groceries
+2025-01-31,Starbucks coffee,-8.01,Dining
+2025-02-01,Netflix monthly subscription,-15.99,Entertainment
+2025-02-01,Rent payment,-1500.0,Bills
+2025-02-01,Grocery store purchase,-112.04,Groceries
+2025-02-02,Grocery store purchase,-122.3,Groceries
+2025-02-03,Starbucks coffee,-44.25,Dining
+2025-02-04,Cafe lunch,-36.48,Dining
+2025-02-06,Restaurant meal,-12.62,Dining
+2025-02-08,Restaurant meal,-33.39,Dining
+2025-02-08,Amazon purchase,-160.68,Shopping
+2025-02-10,Walmart purchase,-61.0,Groceries
+2025-02-10,Internet bill payment,-61.2,Bills
+2025-02-11,Cafe lunch,-23.73,Dining
+2025-02-13,Cafe lunch,-7.84,Dining
+2025-02-13,Grocery store purchase,-94.83,Groceries
+2025-02-14,Cafe lunch,-40.89,Dining
+2025-02-15,Spotify monthly subscription,-10.99,Entertainment
+2025-02-15,Amazon purchase,-310.14,Shopping
+2025-02-16,Starbucks coffee,-48.37,Dining
+2025-02-17,Restaurant meal,-49.95,Dining
+2025-02-20,Starbucks coffee,-27.28,Dining
+2025-02-21,Starbucks coffee,-34.55,Dining
+2025-02-23,Walmart purchase,-43.68,Groceries
+2025-02-24,Starbucks coffee,-34.61,Dining
+2025-02-25,Shell gas fill-up,-60.89,Fuel
+2025-02-25,Starbucks coffee,-37.22,Dining
+2025-02-25,Monthly paycheck deposit,5500.0,Salary
+2025-02-27,Cafe lunch,-12.12,Dining
+2025-03-01,Starbucks coffee,-41.43,Dining
+2025-03-01,Netflix monthly subscription,-15.99,Entertainment
+2025-03-01,Rent payment,-1500.0,Bills
+2025-03-01,Amazon purchase,-97.17,Shopping
+2025-03-02,Cafe lunch,-14.98,Dining
+2025-03-02,Grocery store purchase,-90.99,Groceries
+2025-03-03,Cafe lunch,-43.37,Dining
+2025-03-04,Starbucks coffee,-37.87,Dining
+2025-03-07,Starbucks coffee,-13.66,Dining
+2025-03-08,Grocery store purchase,-121.24,Groceries
+2025-03-08,Cafe lunch,-36.11,Dining
+2025-03-09,Starbucks coffee,-28.62,Dining
+2025-03-10,Internet bill payment,-63.93,Bills
+2025-03-13,Cafe lunch,-41.51,Dining
+2025-03-15,Starbucks coffee,-39.41,Dining
+2025-03-15,Spotify monthly subscription,-10.99,Entertainment
+2025-03-15,Flipkart purchase,-339.37,Shopping
+2025-03-17,Restaurant meal,-22.49,Dining
+2025-03-17,Grocery store purchase,-77.97,Groceries
+2025-03-18,Starbucks coffee,-12.33,Dining
+2025-03-19,Cafe lunch,-6.61,Dining
+2025-03-20,Cafe lunch,-13.73,Dining
+2025-03-21,Walmart purchase,-88.12,Groceries
+2025-03-21,Cafe lunch,-29.77,Dining
+2025-03-22,Restaurant meal,-5.41,Dining
+2025-03-24,Grocery store purchase,-60.95,Groceries
+2025-03-25,Monthly paycheck deposit,5500.0,Salary
+2025-03-25,Shell gas fill-up,-46.09,Fuel
+2025-03-26,Restaurant meal,-46.9,Dining
+2025-03-27,Cafe lunch,-29.52,Dining
+2025-03-28,Starbucks coffee,-19.85,Dining
+2025-03-29,Walmart purchase,-149.65,Groceries
+2025-03-29,Flipkart purchase,-150.69,Shopping
+2025-03-31,Restaurant meal,-39.88,Dining
+2025-04-01,Cafe lunch,-18.39,Dining
+2025-04-01,Netflix monthly subscription,-15.99,Entertainment
+2025-04-01,Rent payment,-1500.0,Bills
+2025-04-04,Starbucks coffee,-22.71,Dining
+2025-04-06,Cafe lunch,-9.16,Dining
+2025-04-09,Grocery store purchase,-132.18,Groceries
+2025-04-10,Walmart purchase,-71.5,Groceries
+2025-04-10,Internet bill payment,-61.99,Bills
+2025-04-12,Cafe lunch,-35.48,Dining
+2025-04-13,Starbucks coffee,-18.79,Dining
+2025-04-14,Restaurant meal,-41.44,Dining
+2025-04-15,Spotify monthly subscription,-10.99,Entertainment
+2025-04-16,Starbucks coffee,-27.32,Dining
+2025-04-18,Walmart purchase,-130.82,Groceries
+2025-04-18,Restaurant meal,-5.02,Dining
+2025-04-20,Starbucks coffee,-16.57,Dining
+2025-04-21,Cafe lunch,-24.68,Dining
+2025-04-23,Restaurant meal,-8.0,Dining
+2025-04-24,Grocery store purchase,-105.45,Groceries
+2025-04-25,Monthly paycheck deposit,5500.0,Salary
+2025-04-25,Shell gas fill-up,-51.63,Fuel
+2025-04-26,Cafe lunch,-19.36,Dining
+2025-04-27,Cafe lunch,-21.08,Dining
+2025-04-28,Restaurant meal,-37.62,Dining
+2025-04-29,Restaurant meal,-41.64,Dining
+2025-04-30,Restaurant meal,-8.44,Dining
+2025-05-01,Rent payment,-1500.0,Bills
+2025-05-01,Netflix monthly subscription,-15.99,Entertainment
+2025-05-04,Restaurant meal,-5.45,Dining
+2025-05-06,Starbucks coffee,-25.98,Dining
+2025-05-08,Grocery store purchase,-48.04,Groceries
+2025-05-08,Restaurant meal,-28.88,Dining
+2025-05-09,Cafe lunch,-29.42,Dining
+2025-05-10,Walmart purchase,-105.21,Groceries
+2025-05-10,Internet bill payment,-60.67,Bills
+2025-05-11,Walmart purchase,-124.39,Groceries
+2025-05-14,Restaurant meal,-8.98,Dining
+2025-05-15,Spotify monthly subscription,-10.99,Entertainment
+2025-05-15,Walmart purchase,-69.9,Groceries
+2025-05-15,Cafe lunch,-25.86,Dining
+2025-05-17,Restaurant meal,-19.11,Dining
+2025-05-17,Mall purchase,-153.12,Shopping
+2025-05-18,Starbucks coffee,-39.26,Dining
+2025-05-22,Cafe lunch,-38.44,Dining
+2025-05-23,Cafe lunch,-39.45,Dining
+2025-05-24,Walmart purchase,-58.06,Groceries
+2025-05-24,Amazon purchase,-215.89,Shopping
+2025-05-25,Shell gas fill-up,-64.46,Fuel
+2025-05-25,Monthly paycheck deposit,5500.0,Salary
+2025-05-25,Walmart purchase,-47.09,Groceries
+2025-05-28,Cafe lunch,-49.32,Dining
+2025-05-30,Cafe lunch,-37.44,Dining
+2025-05-31,Cafe lunch,-17.65,Dining
+2025-05-31,Mall purchase,-371.09,Shopping
+2025-06-01,Netflix monthly subscription,-15.99,Entertainment
+2025-06-01,Rent payment,-1500.0,Bills
+2025-06-02,Cafe lunch,-47.42,Dining
+2025-06-07,Grocery store purchase,-40.21,Groceries
+2025-06-07,Restaurant meal,-45.14,Dining
+2025-06-09,Grocery store purchase,-56.26,Groceries
+2025-06-10,Internet bill payment,-60.65,Bills
+2025-06-11,Restaurant meal,-36.61,Dining
+2025-06-15,Cafe lunch,-27.36,Dining
+2025-06-15,Spotify monthly subscription,-10.99,Entertainment
+2025-06-16,Grocery store purchase,-81.04,Groceries
+2025-06-17,Cafe lunch,-39.4,Dining
+2025-06-18,Cafe lunch,-43.57,Dining
+2025-06-19,Starbucks coffee,-36.47,Dining
+2025-06-20,Starbucks coffee,-12.31,Dining
+2025-06-21,Mall purchase,-250.06,Shopping
+2025-06-23,Walmart purchase,-74.63,Groceries
+2025-06-23,Starbucks coffee,-25.71,Dining
+2025-06-24,Restaurant meal,-11.86,Dining
+2025-06-25,Starbucks coffee,-24.21,Dining
+2025-06-25,Monthly paycheck deposit,5500.0,Salary
+2025-06-25,Shell gas fill-up,-54.57,Fuel
+2025-06-26,Restaurant meal,-16.37,Dining
+2025-06-28,Cafe lunch,-40.87,Dining
+2025-06-29,Walmart purchase,-114.22,Groceries
+2025-06-30,Walmart purchase,-142.18,Groceries
+2025-06-30,Cafe lunch,-44.36,Dining

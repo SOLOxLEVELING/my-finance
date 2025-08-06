@@ -1,92 +1,106 @@
-# 1. Import all the necessary libraries
 import pandas as pd
-import numpy as np
-from sklearn.linear_model import LinearRegression
+from prophet import Prophet
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import logging
+from datetime import date
 
-# 2. Create the Flask web server
+logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
-# Allow requests from other origins (like your Node.js server)
 CORS(app)
 
-# 3. Define the prediction endpoint
 @app.route('/predict', methods=['POST'])
 def predict():
-    # --- DATA PREPARATION ---
-    
-    # Get the JSON data sent from your Node.js server
     data = request.get_json()
     if not data or 'history' not in data:
         return jsonify({"error": "Invalid input: 'history' key not found."}), 400
 
-    # Convert the list of transactions into a pandas DataFrame
-    # This makes it easy to work with the data
     history_df = pd.DataFrame(data['history'])
     if history_df.empty:
         return jsonify({"error": "No historical data provided."}), 400
 
-    # Convert date strings to actual datetime objects
     history_df['transaction_date'] = pd.to_datetime(history_df['transaction_date'])
-    # Convert amounts to numbers and take the absolute value (spending is positive)
     history_df['amount'] = pd.to_numeric(history_df['amount']).abs()
+    
+    if 'category' not in history_df.columns:
+        history_df['category'] = 'One-time'
+    else:
+        history_df['category'] = history_df['category'].fillna('One-time')
 
-    # Sum up all transactions for each day to get total daily spending
-    # 'D' stands for Daily. We fill any days with no spending with 0.
+    subscriptions = history_df[history_df['category'].str.lower() == 'subscription']
+    holidays = []
+    if not subscriptions.empty:
+        subscription_days = subscriptions['transaction_date'].dt.day.unique()
+        
+        for day in subscription_days:
+            holiday_name = f"Subscription_Day_{day}"
+            valid_dates = []
+            for year in [2024, 2025, 2026]:
+                for month in range(1, 13):
+                    try:
+                        d = date(year, month, day)
+                        valid_dates.append(pd.to_datetime(d))
+                    except ValueError:
+                        continue
+            
+            if valid_dates:
+                holidays.append(pd.DataFrame({
+                    'holiday': holiday_name,
+                    'ds': valid_dates,
+                    'lower_window': 0,
+                    'upper_window': 0,
+                }))
+
+    holidays_df = pd.concat(holidays, ignore_index=True) if holidays else None
+    if holidays_df is not None:
+        logging.info(f"Created custom holidays for subscription days: {holidays_df['holiday'].unique().tolist()}")
+
     daily_spending = history_df.resample('D', on='transaction_date')['amount'].sum().fillna(0)
     
-    # If we have less than 2 data points, we can't train a model
-    if len(daily_spending) < 2:
+    prophet_df = daily_spending.reset_index()
+    prophet_df.rename(columns={'transaction_date': 'ds', 'amount': 'y'}, inplace=True)
+    
+    prophet_df['ds'] = prophet_df['ds'].dt.tz_localize(None)
+    prophet_df['cap'] = 1500
+
+    if len(prophet_df) < 2:
         return jsonify({"error": "Not enough historical data to make a prediction."}), 400
 
-    # --- MODEL TRAINING ---
+    # CORRECTED MODEL INITIALIZATION
+    model = Prophet(
+        growth='logistic',
+        yearly_seasonality=False,
+        changepoint_prior_scale=0.01,
+        holidays=holidays_df
+    )
+    # Add monthly seasonality in a separate step for compatibility
+    model.add_seasonality(name='monthly', period=30.5, fourier_order=5)
+    
+    model.fit(prophet_df)
 
-    # We need a numerical feature for time. We'll use "days from the start".
-    # This creates an array like [0, 1, 2, 3, ...]
-    X = np.arange(len(daily_spending)).reshape(-1, 1)
-    y = daily_spending.values
+    future = model.make_future_dataframe(periods=30)
+    future['cap'] = 1500
 
-    # Create and train the Linear Regression model
-    model = LinearRegression()
-    model.fit(X, y)
-
-    # --- FORECASTING ---
-
-    # Predict the spending for the next 30 days
-    last_day_index = len(daily_spending) - 1
-    future_days = np.arange(last_day_index + 1, last_day_index + 31).reshape(-1, 1)
-    predicted_spending = model.predict(future_days)
-
-    # Don't predict negative spending
-    predicted_spending = predicted_spending.clip(min=0)
-
-    # --- PREPARE RESPONSE ---
-
-    # Get the dates for the forecast period
-    last_date = daily_spending.index.max()
-    future_dates = pd.to_datetime([last_date + pd.DateOffset(days=i) for i in range(1, 31)])
-
-    # Combine historical and predicted data for the chart
+    forecast = model.predict(future)
+    forecast['yhat'] = forecast['yhat'].clip(lower=0)
+    
+    # PREPARE RESPONSE
+    forecast_data = forecast[['ds', 'yhat']].tail(30)
     response_data = []
-    # Add historical data
-    for date, amount in daily_spending.items():
+    for index, row in prophet_df.iterrows():
         response_data.append({
-            "date": date.strftime('%Y-%m-%d'),
-            "actual": amount,
-            "predicted": None # No prediction for past dates
+            "date": row['ds'].strftime('%Y-%m-%d'),
+            "actual": row['y'],
+            "predicted": None
         })
-    # Add forecasted data
-    for i in range(len(future_dates)):
+    for index, row in forecast_data.iterrows():
         response_data.append({
-            "date": future_dates[i].strftime('%Y-%m-%d'),
-            "actual": None, # No actual spending for future dates
-            "predicted": predicted_spending[i]
+            "date": row['ds'].strftime('%Y-%m-%d'),
+            "actual": None,
+            "predicted": row['yhat']
         })
         
     return jsonify(response_data)
 
-# 4. Start the server
 if __name__ == '__main__':
-    # Runs on port 5000 by default.
-    # The debug=True flag allows you to see errors and automatically reloads the server when you save changes.
-    app.run(host='0.0.0.0', debug=True, port=5001) # <-- CHANGE THIS LINE
+    app.run(host='0.0.0.0', port=5001)

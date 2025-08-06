@@ -8,24 +8,32 @@ router.use(authenticateToken);
 
 router.get("/", async (req, res) => {
   const { userId } = req.user;
-  // CHANGE THIS LINE: Use the Docker service name instead of localhost
   const pythonServiceUrl = "http://prediction-service:5001/predict";
 
   try {
-    // 1. Fetch historical data for the user from your database
-    const history = await db.query(
-      `SELECT transaction_date, amount FROM transactions
-             WHERE account_id IN (SELECT id FROM accounts WHERE user_id = $1)
-             AND amount < 0 ORDER BY transaction_date ASC`,
-      [userId]
-    );
+    // --- FIX: The SQL query has been updated ---
+    // It now joins with the 'categories' table to get the category name for each transaction.
+    const historyQuery = `
+      SELECT 
+        t.transaction_date, 
+        t.amount, 
+        c.name AS category 
+      FROM transactions t
+      LEFT JOIN categories c ON t.category_id = c.id
+      WHERE t.account_id IN (SELECT id FROM accounts WHERE user_id = $1)
+      AND t.amount < 0 
+      ORDER BY t.transaction_date ASC
+    `;
+    const history = await db.query(historyQuery, [userId]);
+    // -------------------------------------------
 
-    // 2. Call the Python ML service with the historical data
+    // Now, history.rows will contain objects like:
+    // { transaction_date: '...', amount: '...', category: 'Subscription' }
+
     const forecastResponse = await axios.post(pythonServiceUrl, {
       history: history.rows,
     });
 
-    // 3. Send the forecast received from the Python service back to the frontend
     res.json(forecastResponse.data);
   } catch (error) {
     console.error("Forecast error:", error.message);

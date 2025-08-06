@@ -17,5 +17,4 @@ COPY . .
 EXPOSE 5001
 
 # The command to run the Python service when the container starts
-# The '-h', '0.0.0.0' makes the server accessible from other containers
 CMD [ "python", "-u", "prediction_service.py" ]
