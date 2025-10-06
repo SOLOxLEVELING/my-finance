@@ -37,10 +37,10 @@ const CSVUploader = () => {
     setIsError(false);
 
     try {
-      const response = await axios.post(
-        "http://localhost:3001/api/transactions/upload",
-        formData,
-        {
+      const response = await apiClient.post(
+      "/transactions/upload", // Use the endpoint path only
+      formData,
+       {
           headers: {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`, // 👈 set the token here
