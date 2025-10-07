@@ -79,7 +79,7 @@ const DashboardPage = () => {
         Dashboard
       </h1>
       <SummaryWidget summaryData={dashboardData.summary} />
-      <ForecastWidget />
+      {/* <ForecastWidget /> */}
       <BudgetTrackerWidget
         budgets={dashboardData?.budgets || []}
         currency={currency} // Pass the dynamic currency to the widget
