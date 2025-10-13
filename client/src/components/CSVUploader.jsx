@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import apiClient from "../api/axios"; // Adjust the path if your folder structure is different
 
 const CSVUploader = () => {
   const [file, setFile] = useState(null);
@@ -37,18 +37,19 @@ const CSVUploader = () => {
     setIsError(false);
 
     try {
-      const response = await axios.post(
-        "http://localhost:3001/api/transactions/upload",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${token}`, // 👈 set the token here
-          },
-        }
-      );
-      setMessage(response.data.message);
-      setIsError(false);
+       const response = await apiClient.post(
+       "/transactions/upload",
+       formData,
+      {
+         // The "Content-Type" is often set automatically by the browser with FormData
+         // And "Authorization" is handled by the apiClient interceptor
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+     setMessage(response.data.message);
+     setIsError(false);
     } catch (error) {
       const errorMessage =
         error.response?.data?.message || "An unexpected error occurred.";

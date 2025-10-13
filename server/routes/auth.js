@@ -6,7 +6,8 @@ const authenticateToken = require("../middleware/authenticateToken"); // <-- imp
 const router = express.Router();
 
 // A secret key for signing the JWT. In a real production app, store this in an environment variable!
-const JWT_SECRET = "your-super-secret-key-that-is-long-and-random";
+// Get the JWT secret from environment variables
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // POST /api/auth/register
 router.post("/register", async (req, res) => {

@@ -10,16 +10,7 @@ const axios = require("axios");
 router.use(authenticateToken);
 
 // --- Helper function to get exchange rates ---
-async function getLiveRates() {
-  const apiKey = process.env.EXCHANGERATE_API_KEY;
-  if (!apiKey) throw new Error("API key not configured.");
-  const url = `https://v6.exchangerate-api.com/v6/${apiKey}/latest/USD`;
-  const response = await axios.get(url);
-  if (response.data?.result === "success") {
-    return response.data.conversion_rates;
-  }
-  throw new Error("Failed to fetch exchange rates");
-}
+const { getLiveRates } = require("../utils/currency");
 
 // --- FIX: This route now correctly calculates and saves amount_usd ---
 router.post("/", async (req, res) => {

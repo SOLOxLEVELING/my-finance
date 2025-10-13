@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const apiClient = axios.create({
-    baseURL: "http://localhost:3001/api",
-    withCredentials: true, // ✅ matches backend CORS
+    baseURL: import.meta.env.VITE_API_URL, // <-- Use environment variable
+    withCredentials: true,
   });
   
 // Attach the token to every request if available
