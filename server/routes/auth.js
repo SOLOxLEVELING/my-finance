@@ -46,11 +46,15 @@ router.post("/register", async (req, res) => {
     res.status(201).json({ message: "User registered successfully!" });
   } catch (error) {
     await db.query("ROLLBACK");
+    // Check if the error is a duplicate key violation
+    if (error.code === "23505") {
+      return res
+        .status(409)
+        .json({ message: "Username or email already exists." });
+    }
+    // For all other errors, send a generic 500 error
     console.error("Registration error:", error);
-    res.status(500).json({
-      message:
-        "Registration failed. The email or username may already be taken.",
-    });
+    res.status(500).json({ message: "Server error during registration." });
   }
 });
 
