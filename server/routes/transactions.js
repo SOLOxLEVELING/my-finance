@@ -263,9 +263,13 @@ router.post(
           const rates = await getLiveRates();
           for (const row of results) {
             const { transaction_date, description, amount } = row;
+            let rawCategory = row.category || "";
+            // This new line replaces multiple spaces/tabs with a single space, then trims.
+            let cleanedCategory = rawCategory.replace(/\s+/g, " ").trim();
+
             let categoryName =
-              row.category && row.category.trim() !== ""
-                ? row.category.trim()
+              cleanedCategory !== ""
+                ? cleanedCategory
                 : guessCategory(description);
             const existing = await db.query(
               "SELECT id FROM categories WHERE user_id=$1 AND name=$2",
