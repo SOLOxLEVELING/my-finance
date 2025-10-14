@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
-const JWT_SECRET = "your-super-secret-key-that-is-long-and-random"; // Must be the same secret key
+// CORRECT code for authenticateToken.js
+const JWT_SECRET = process.env.JWT_SECRET; // Must be the same secret key
 
 module.exports = function (req, res, next) {
   // Get token from header
