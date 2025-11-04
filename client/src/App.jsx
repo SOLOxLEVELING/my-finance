@@ -11,10 +11,17 @@ import BudgetSetupPage from "./pages/BudgetSetupPage"; // <-- Import new page
 import DataImportPage from "./pages/DataImportPage"; // <-- Import the new page
 import SettingsPage from "./pages/SettingsPage"; // <-- Import the new page
 import CurrencyProvider from "./context/CurrencyProvider";
+import Clarity from "@microsoft/clarity";
 
 // Layout component with shared navigation
 const AppLayout = () => {
   const { isAuthenticated, logout } = useAuth();
+
+  useEffect(() => {
+    if (import.meta.env.MODE === "production") {
+      Clarity.init(import.meta.env.VITE_CLARITY_ID);
+    }
+  }, []);
 
   return (
     // <-- this was missing
