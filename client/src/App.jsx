@@ -1,4 +1,4 @@
-import React from "react";
+import { React, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Link, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext"; // Import AuthProvider
 import ProtectedRoute from "./components/ProtectedRoute"; // Import ProtectedRoute
