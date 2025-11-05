@@ -3,7 +3,7 @@
 import React, {useEffect, useState} from "react";
 import apiClient from "../api/axios";
 import {useCurrency} from "../hooks/useCurrency";
-import {Pencil, Trash2} from "lucide-react"; // Import icons
+import {Pencil, Trash2} from "lucide-react"; // Icons are already good
 
 const CategoryManagerPage = () => {
     const [categories, setCategories] = useState([]);
@@ -66,18 +66,16 @@ const CategoryManagerPage = () => {
 
     return (
         <div className="space-y-6">
-            {/* H1 is gone (handled by Header) */}
-
-            {/* Create New Category Card */}
-            <div className="p-6 bg-white rounded-lg shadow-lg">
-                <h2 className="text-xl font-semibold text-gray-800">
+            {/* --- Create New Category Card (Updated Styles) --- */}
+            <div className="p-6 bg-white rounded-lg shadow-lg border border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-900">
                     Create New Category
                 </h2>
                 <form
                     onSubmit={handleCreateCategory}
-                    className="flex items-end space-x-4 mt-4"
+                    className="flex flex-col sm:flex-row items-end space-y-4 sm:space-y-0 sm:space-x-4 mt-4"
                 >
-                    <div className="flex-grow">
+                    <div className="flex-grow w-full">
                         <label
                             htmlFor="category-name"
                             className="block text-sm font-medium text-gray-700"
@@ -90,12 +88,14 @@ const CategoryManagerPage = () => {
                             value={newCategoryName}
                             onChange={(e) => setNewCategoryName(e.target.value)}
                             placeholder="e.g., Groceries"
-                            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            // --- Updated Input Styles ---
+                            className="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:bg-white focus:border-indigo-500 focus:ring-indigo-500"
                         />
                     </div>
                     <button
                         type="submit"
-                        className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors"
+                        // --- Updated Button Styles ---
+                        className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors w-full sm:w-auto flex-shrink-0"
                     >
                         Create
                     </button>
@@ -103,13 +103,12 @@ const CategoryManagerPage = () => {
                 {message && <p className="mt-3 text-sm text-green-600">{message}</p>}
             </div>
 
-            {/* Your Categories Card */}
-            <div className="bg-white shadow-lg overflow-hidden rounded-lg">
+            {/* --- Your Categories Card (Updated Styles) --- */}
+            <div className="bg-white shadow-lg overflow-hidden rounded-lg border border-gray-200">
                 <div className="p-4 sm:p-6 border-b border-gray-200">
-                    <h2 className="text-xl font-semibold text-gray-800">Your Categories</h2>
+                    <h2 className="text-xl font-semibold text-gray-900">Your Categories</h2>
                 </div>
 
-                {/* Using a simple list, but could be converted to a table like transactions */}
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -139,7 +138,7 @@ const CategoryManagerPage = () => {
                                                 if (e.key === "Enter")
                                                     handleUpdateCategory(category.id, e.target.value);
                                             }}
-                                            className="text-sm font-medium text-gray-900 border-gray-300 rounded-md px-2 py-1"
+                                            className="text-sm font-medium text-gray-900 border-gray-300 rounded-md px-2 py-1 shadow-sm"
                                             autoFocus
                                         />
                                     </td>

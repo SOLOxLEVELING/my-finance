@@ -5,7 +5,7 @@ import CSVUploader from "../components/CSVUploader";
 
 const DataImportPage = () => {
     return (
-        // We keep this wrapper to center the max-width uploader on the page
+        // This wrapper centers the uploader
         <div className="flex flex-col items-center">
             <CSVUploader/>
         </div>

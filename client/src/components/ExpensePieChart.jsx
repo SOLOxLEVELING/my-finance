@@ -4,7 +4,6 @@ import React from "react";
 import {Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip,} from "recharts";
 import {useCurrency} from "../hooks/useCurrency";
 
-// Using new Tailwind colors (indigo, yellow, green, red, purple, pink)
 const COLORS = [
     "#6366f1",
     "#f59e0b",
@@ -65,7 +64,9 @@ const ExpensePieChart = ({data}) => {
     };
 
     return (
-        <div className="p-6 bg-white rounded-lg shadow-lg">
+        // --- UPDATED CLASSES ---
+        <div
+            className="p-6 bg-white rounded-lg shadow-lg border border-gray-200 h-full hover:shadow-2xl hover:-translate-y-1 transition-all duration-200">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">
                 Spending by Category
             </h3>

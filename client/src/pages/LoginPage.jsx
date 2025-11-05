@@ -4,7 +4,18 @@ import React, {useState} from "react";
 import {useAuth} from "../context/AuthContext";
 import {Link, useNavigate} from "react-router-dom";
 import apiClient from "../api/axios";
-import {Wallet} from "lucide-react"; // Import the icon
+
+// --- New Logo Component (local to this page) ---
+const Logo = () => (
+    <div className="flex justify-center items-center mb-6">
+        {/* Simple "T7" logo */}
+        <div className="bg-gray-900 text-white w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0">
+            <span className="font-bold text-2xl">T</span>
+            <span className="font-bold text-2xl text-indigo-600">7</span>
+        </div>
+        <span className="text-3xl font-bold text-gray-900 ml-3">myFinance</span>
+    </div>
+);
 
 const LoginPage = () => {
     const [email, setEmail] = useState("");
@@ -30,18 +41,13 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50">
-            <div className="w-full max-w-md">
-                {/* Logo and App Name */}
-                <div className="flex justify-center items-center mb-6">
-                    <Wallet size={40} className="text-indigo-600"/>
-                    <span className="text-3xl font-bold text-indigo-600 ml-2">
-            myFinance
-          </span>
-                </div>
+        // --- Updated Background ---
+        <div className="flex items-center justify-center min-h-screen bg-gray-100">
+            <div className="w-full max-w-md p-4">
+                <Logo/>
 
-                {/* Login Card */}
-                <div className="p-8 space-y-6 bg-white rounded-lg shadow-lg">
+                {/* --- Updated Card Styles --- */}
+                <div className="p-8 space-y-6 bg-white rounded-lg shadow-lg border border-gray-200">
                     <h2 className="text-2xl font-bold text-center text-gray-900">
                         Login to Your Account
                     </h2>
@@ -54,12 +60,13 @@ const LoginPage = () => {
                             >
                                 Email Address
                             </label>
+                            {/* --- Updated Input Styles --- */}
                             <input
                                 type="email"
                                 id="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                className="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:bg-white focus:border-indigo-500 focus:ring-indigo-500"
                                 required
                             />
                         </div>
@@ -70,12 +77,13 @@ const LoginPage = () => {
                             >
                                 Password
                             </label>
+                            {/* --- Updated Input Styles --- */}
                             <input
                                 type="password"
                                 id="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                className="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:bg-white focus:border-indigo-500 focus:ring-indigo-500"
                                 required
                             />
                         </div>

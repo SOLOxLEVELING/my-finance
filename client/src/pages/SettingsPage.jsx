@@ -12,11 +12,12 @@ const SettingsPage = () => {
     const navigate = useNavigate();
     const [error, setError] = useState("");
 
+    // --- (Helper functions remain unchanged) ---
     const handleCurrencyChange = async (e) => {
         const newCurrency = e.target.value;
         try {
             await apiClient.put("/auth/me/currency", {currency: newCurrency});
-            updateUserCurrency(newCurrency); // Update app state instantly
+            updateUserCurrency(newCurrency);
         } catch (err) {
             setError("Failed to change currency. Please try again later.");
             console.error(err);
@@ -43,23 +44,23 @@ const SettingsPage = () => {
             }
         }
     };
+    // --- (End of helper functions) ---
 
     return (
         <div className="space-y-6">
-            {/* H1 is gone (handled by Header) */}
-
-            {/* Currency Section Card */}
-            <div className="p-6 bg-white rounded-lg shadow-lg">
-                <h2 className="text-xl font-semibold text-gray-800">Currency</h2>
+            {/* --- Currency Section Card (Updated Style) --- */}
+            <div className="p-6 bg-white rounded-lg shadow-lg border border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-900">Currency</h2>
                 <p className="mt-2 text-sm text-gray-600">
                     Choose your preferred currency for display across the application.
                 </p>
                 <div className="mt-4">
+                    {/* --- Updated Select Style --- */}
                     <select
                         value={currency}
                         onChange={handleCurrencyChange}
                         disabled={ratesLoading}
-                        className="mt-1 block max-w-xs px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        className="mt-1 block max-w-xs px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:bg-white focus:border-indigo-500 focus:ring-indigo-500"
                     >
                         <option value="USD">USD - United States Dollar</option>
                         <option value="EUR">EUR - Euro</option>
@@ -74,8 +75,8 @@ const SettingsPage = () => {
                 </div>
             </div>
 
-            {/* Danger Zone Section Card */}
-            <div className="p-6 bg-white rounded-lg shadow-lg">
+            {/* --- Danger Zone Section Card (Updated Style) --- */}
+            <div className="p-6 bg-white rounded-lg shadow-lg border border-gray-200">
                 <h2 className="text-xl font-semibold text-red-600">Danger Zone</h2>
                 <p className="mt-2 text-sm text-gray-600">
                     Deleting your account is a permanent action. All your financial data,

@@ -14,6 +14,7 @@ const BudgetSetupPage = () => {
     const {rates, loading} = useCurrencyRates();
     const {refreshData} = useAuth();
 
+    // --- (All helper functions remain unchanged) ---
     const fetchBudgetData = async (currentMonth) => {
         try {
             const response = await apiClient.get(`/budgets/${currentMonth}-01`);
@@ -76,11 +77,10 @@ const BudgetSetupPage = () => {
             setMessage("Error: Failed to save budgets.");
         }
     };
+    // --- (End of helper functions) ---
 
     return (
         <div className="space-y-6">
-            {/* H1 is gone (handled by Header) */}
-
             {/* Month Selector */}
             <div>
                 <label
@@ -89,22 +89,22 @@ const BudgetSetupPage = () => {
                 >
                     Select Month:
                 </label>
+                {/* --- Updated Input Style --- */}
                 <input
                     type="month"
                     id="month-select"
                     value={month}
                     onChange={(e) => setMonth(e.target.value)}
-                    className="mt-1 block w-full max-w-xs px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    className="mt-1 block w-full max-w-xs px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:bg-white focus:border-indigo-500 focus:ring-indigo-500"
                 />
             </div>
 
-            {/* Budget Settings Card */}
-            <div className="p-6 bg-white rounded-lg shadow-lg">
+            {/* --- Budget Settings Card (Updated Style) --- */}
+            <div className="p-6 bg-white rounded-lg shadow-lg border border-gray-200">
                 <div className="space-y-4">
                     {budgetData.map((item) => (
                         <div
                             key={item.categoryId}
-                            // --- THIS IS THE UPDATED LINE ---
                             className="flex flex-col sm:flex-row sm:items-center sm:justify-between"
                         >
               <span className="text-sm font-medium text-gray-800 mb-2 sm:mb-0">
@@ -114,14 +114,14 @@ const BudgetSetupPage = () => {
                 <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
                   {symbol}
                 </span>
+                                {/* --- Updated Input Style --- */}
                                 <input
                                     type="number"
                                     value={item.budgetAmountOriginal}
                                     onChange={(e) =>
                                         handleInputChange(item.categoryId, e.target.value)
                                     }
-                                    // --- Added w-full for mobile, sm:w-40 for desktop ---
-                                    className="block w-full sm:w-40 pl-7 pr-2 py-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    className="block w-full sm:w-40 pl-7 pr-2 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:bg-white focus:border-indigo-500 focus:ring-indigo-500"
                                     placeholder="0.00"
                                     min="0"
                                     step="0.01"
@@ -134,6 +134,7 @@ const BudgetSetupPage = () => {
                     {message && (
                         <p className="text-sm text-green-600 mr-4">{message}</p>
                     )}
+                    {/* --- Updated Button Style --- */}
                     <button
                         onClick={handleSaveChanges}
                         className="px-4 py-2 font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors"

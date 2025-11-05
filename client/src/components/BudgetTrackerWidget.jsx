@@ -2,17 +2,44 @@
 
 import React from "react";
 import {useCurrencyRates} from "../context/CurrencyProvider";
+import {Link} from "react-router-dom";
+import {Plus} from "lucide-react";
+
+// --- New Empty State Component (UPDATED) ---
+const EmptyState = () => (
+    <div
+        className="p-6 bg-white shadow-lg rounded-lg border border-gray-200 h-full flex flex-col items-center justify-center text-center hover:shadow-2xl hover:-translate-y-1 transition-all duration-200">
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">
+            No Budget Set Yet
+        </h3>
+        <p className="text-sm text-gray-500 mb-4">
+            Start by creating one to track your spending.
+        </p>
+        <Link
+            to="/budgets"
+            className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors"
+        >
+            <Plus size={16} className="mr-2"/>
+            Create Budget
+        </Link>
+    </div>
+);
 
 const BudgetTrackerWidget = ({budgets, currency}) => {
     const {rates} = useCurrencyRates();
 
     if (!rates)
         return (
-            <div className="p-6 bg-white rounded-lg shadow-lg min-h-[150px] flex items-center justify-center">
+            // --- UPDATED CLASSES ---
+            <div
+                className="p-6 bg-white rounded-lg shadow-lg border border-gray-200 min-h-[150px] flex items-center justify-center hover:shadow-2xl hover:-translate-y-1 transition-all duration-200">
                 <p className="text-gray-500">Loading rates...</p>
             </div>
         );
-    if (!budgets || budgets.length === 0) return null;
+
+    if (!budgets || budgets.length === 0) {
+        return <EmptyState/>;
+    }
 
     const totalBudgetUSD = budgets.reduce(
         (sum, b) => sum + (b.budgetAmountUSD || 0),
@@ -24,6 +51,11 @@ const BudgetTrackerWidget = ({budgets, currency}) => {
     );
     const totalBudgetConverted = totalBudgetUSD * (rates[currency] || 1);
     const totalSpentConverted = totalSpentUSD * (rates[currency] || 1);
+
+    if (totalBudgetConverted === 0) {
+        return <EmptyState/>;
+    }
+
     const totalPercent =
         totalBudgetConverted > 0
             ? (totalSpentConverted / totalBudgetConverted) * 100
@@ -37,7 +69,9 @@ const BudgetTrackerWidget = ({budgets, currency}) => {
                 : "bg-green-500";
 
     return (
-        <div className="p-6 bg-white shadow-lg rounded-lg">
+        // --- UPDATED CLASSES ---
+        <div
+            className="p-6 bg-white shadow-lg rounded-lg border border-gray-200 h-full hover:shadow-2xl hover:-translate-y-1 transition-all duration-200">
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Budget Progress
             </h3>

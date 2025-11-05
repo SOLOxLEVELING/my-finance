@@ -3,11 +3,12 @@
 import React, {useEffect, useState} from "react";
 import {useAuth} from "../context/AuthContext";
 import apiClient from "../api/axios";
-import SummaryWidget from "../components/SummaryWidget";
-import ExpensePieChart from "../components/ExpensePieChart";
-import IncomeVsExpenseBarChart from "../components/IncomeVsExpenseBarChart";
-import BudgetTrackerWidget from "../components/BudgetTrackerWidget";
 import {useCurrencyRates} from "../context/CurrencyProvider";
+import StatCard from "../components/StatCard";
+import MonthlyOverviewChart from "../components/MonthlyOverviewChart";
+import ExpensePieChart from "../components/ExpensePieChart";
+import BudgetTrackerWidget from "../components/BudgetTrackerWidget";
+import {PiggyBank, TrendingDown, TrendingUp} from "lucide-react";
 
 const DashboardPage = () => {
     const [dashboardData, setDashboardData] = useState(null);
@@ -15,10 +16,10 @@ const DashboardPage = () => {
     const [error, setError] = useState("");
 
     const {userId, accountId, dataVersion, currency} = useAuth();
-    const {rates, loading} = useCurrencyRates();
+    const {rates, loading: ratesLoading} = useCurrencyRates();
 
     useEffect(() => {
-        if (!userId || !accountId || !currency) return;
+        if (!userId || !accountId || !currency || ratesLoading) return;
 
         const fetchData = async () => {
             setIsLoading(true);
@@ -30,17 +31,18 @@ const DashboardPage = () => {
             const currentMonthForQuery = `${year}-${month}-01`;
 
             try {
-                const [summaryRes, pieChartRes, barChartRes, budgetRes] =
+                // --- UPDATED: Removed barChartRes ---
+                const [summaryRes, pieChartRes, budgetRes] =
                     await Promise.all([
                         apiClient.get("/transactions/summary"),
                         apiClient.get("/charts/expenses-by-category"),
-                        apiClient.get("/charts/monthly-summary"),
                         apiClient.get(`/budgets/${currentMonthForQuery}`),
                     ]);
+
+                // --- UPDATED: Removed barChart data ---
                 setDashboardData({
                     summary: summaryRes.data,
                     pieChart: pieChartRes.data,
-                    barChart: barChartRes.data,
                     budgets: budgetRes.data,
                 });
             } catch (err) {
@@ -51,42 +53,74 @@ const DashboardPage = () => {
             }
         };
         fetchData();
-    }, [userId, accountId, dataVersion, currency]);
-
-    if (isLoading) {
-        return <p className="text-center py-10">Loading your dashboard...</p>;
-    }
-
-    if (error) {
-        return (
-            <div className="p-4 bg-red-100 text-red-700 rounded-lg">{error}</div>
-        );
-    }
-
-    if (!dashboardData) {
-        return <p className="text-center py-10">No data available to display.</p>;
-    }
+    }, [userId, accountId, dataVersion, currency, ratesLoading]);
 
     return (
         <div className="space-y-6">
-            {/* The H1 is gone, Header.jsx handles it */}
-            <SummaryWidget summaryData={dashboardData.summary}/>
-
-            {/* ForecastWidget is still commented out, as in your original file */}
-            {/* <ForecastWidget /> */}
-
-            <BudgetTrackerWidget
-                budgets={dashboardData?.budgets || []}
-                currency={currency}
-            />
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                <div className="lg:col-span-3">
-                    <IncomeVsExpenseBarChart data={dashboardData.barChart}/>
-                </div>
-                <div className="lg:col-span-2">
-                    <ExpensePieChart data={dashboardData.pieChart}/>
-                </div>
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+                    Dashboard
+                </h1>
             </div>
+
+            {isLoading && (
+                <div className="p-6 bg-white rounded-lg shadow-md border border-gray-200">
+                    <p className="text-center text-gray-500">Loading dashboard data...</p>
+                </div>
+            )}
+
+            {error && (
+                <div className="p-6 bg-red-100 text-red-700 rounded-lg shadow-md border border-red-200">
+                    <p className="text-center font-medium">{error}</p>
+                </div>
+            )}
+
+            {!isLoading && !error && dashboardData && (
+                <>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <StatCard
+                            title="Total Income"
+                            value={dashboardData.summary.totalIncome}
+                            icon={TrendingUp}
+                            colorTheme="green"
+                            linkTo="/transactions"
+                            showQuickAdd={true}
+                        />
+                        <StatCard
+                            title="Total Expenses"
+                            value={dashboardData.summary.totalExpenses}
+                            icon={TrendingDown}
+                            colorTheme="red"
+                            linkTo="/transactions"
+                            showQuickAdd={true}
+                        />
+                        <StatCard
+                            title="Net Savings"
+                            value={dashboardData.summary.netSavings}
+                            icon={PiggyBank}
+                            colorTheme="blue"
+                            linkTo="/transactions"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1">
+                        {/* --- UPDATED: No longer passing data prop --- */}
+                        <MonthlyOverviewChart/>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                        <div className="lg:col-span-3">
+                            <BudgetTrackerWidget
+                                budgets={dashboardData.budgets}
+                                currency={currency}
+                            />
+                        </div>
+                        <div className="lg:col-span-2">
+                            <ExpensePieChart data={dashboardData.pieChart}/>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 };

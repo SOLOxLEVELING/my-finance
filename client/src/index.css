@@ -29,7 +29,9 @@
     --color-text-body: #111827; /* gray-900 */
 }
 
-body {
-    background-color: var(--color-bg-body);
-    color: var(--color-text-body);
+@layer base {
+    body {
+        /* Updated background to match the new design */
+        @apply bg-gray-100 text-gray-900;
+    }
 }

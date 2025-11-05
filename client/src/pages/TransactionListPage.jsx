@@ -1,21 +1,20 @@
 // src/pages/TransactionListPage.jsx
 
 import React, {useEffect, useState} from "react";
+import {useLocation, useNavigate} from "react-router-dom"; // <-- Import hooks
 import apiClient from "../api/axios";
 import FilterControls from "../components/FilterControls";
 import {useAuth} from "../context/AuthContext";
 import {useCurrency} from "../hooks/useCurrency";
 import {Pencil, Plus, Trash2, X} from "lucide-react";
 
-// REVISED: This new version correctly handles timezones
+// (formatDateForInput and formatDateDDMMYYYY functions remain unchanged)
 const formatDateForInput = (dateString) => {
     const date = new Date(dateString);
-    // Adjust for the user's local timezone offset before creating the string
     const userTimezoneOffset = date.getTimezoneOffset() * 60000;
     const adjustedDate = new Date(date.getTime() - userTimezoneOffset);
     return adjustedDate.toISOString().split("T")[0];
 };
-
 const formatDateDDMMYYYY = (dateString) => {
     const date = new Date(dateString);
     const day = String(date.getDate()).padStart(2, "0");
@@ -24,7 +23,7 @@ const formatDateDDMMYYYY = (dateString) => {
     return `${day}/${month}/${year}`;
 };
 
-// --- AddTransactionForm modified to be a Modal ---
+// --- AddTransactionForm (Modal) (unchanged) ---
 const AddTransactionForm = ({categories, onTransactionAdded, isOpen, onClose}) => {
     const [description, setDescription] = useState("");
     const [amount, setAmount] = useState("");
@@ -48,26 +47,23 @@ const AddTransactionForm = ({categories, onTransactionAdded, isOpen, onClose}) =
                 category_id: category_id || null,
             });
 
-            // Reset form and close modal
             setDescription("");
             setAmount("");
             setCategoryId("");
             setType("expense");
             setTransactionDate(new Date().toISOString().split("T")[0]);
-            onTransactionAdded(); // This will refetch data
-            onClose(); // This will close the modal
+            onTransactionAdded();
+            onClose();
         } catch (error) {
             console.error("Failed to add transaction", error);
         }
     };
 
     return (
-        // Modal Backdrop
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            {/* Modal Content */}
-            <div className="p-6 bg-white rounded-lg shadow-xl w-full max-w-lg">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+            <div className="p-6 bg-white rounded-lg shadow-xl w-full max-w-lg border border-gray-200">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">Add New Transaction</h2>
+                    <h2 className="text-xl font-semibold text-gray-900">Add New Transaction</h2>
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
                         <X size={24}/>
                     </button>
@@ -76,6 +72,7 @@ const AddTransactionForm = ({categories, onTransactionAdded, isOpen, onClose}) =
                     onSubmit={handleSubmit}
                     className="grid grid-cols-1 md:grid-cols-2 gap-4"
                 >
+                    {/* ... (rest of the form is unchanged) ... */}
                     {/* Date */}
                     <div className="md:col-span-1">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
@@ -157,10 +154,10 @@ const AddTransactionForm = ({categories, onTransactionAdded, isOpen, onClose}) =
                     </div>
 
                     {/* Submit Button */}
-                    <div className="md:col-span-2 flex justify-end">
+                    <div className="md:col-span-2 flex justify-end pt-2">
                         <button
                             type="submit"
-                            className="bg-indigo-600 text-white p-2 px-4 rounded-md hover:bg-indigo-700 transition-colors"
+                            className="bg-indigo-600 text-white p-2 px-4 rounded-md hover:bg-indigo-700 transition-colors font-medium"
                         >
                             Add Transaction
                         </button>
@@ -171,6 +168,7 @@ const AddTransactionForm = ({categories, onTransactionAdded, isOpen, onClose}) =
     );
 };
 
+// --- TransactionListPage Component ---
 const TransactionListPage = () => {
     const [transactions, setTransactions] = useState([]);
     const [categories, setCategories] = useState([]);
@@ -184,9 +182,21 @@ const TransactionListPage = () => {
     const [editFormData, setEditFormData] = useState({});
     const {accountId, userId} = useAuth();
     const {format} = useCurrency();
-    const [isModalOpen, setIsModalOpen] = useState(false); // State for modal
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const fetchData = async () => {
+    const location = useLocation(); // <-- Get location
+    const navigate = useNavigate(); // <-- Get navigate
+
+    // --- NEW useEffect to check for quick-add signal ---
+    useEffect(() => {
+        if (location.state?.openModal) {
+            setIsModalOpen(true);
+            // Clear the state from history so it doesn't re-open
+            navigate(location.pathname, {replace: true, state: {}});
+        }
+    }, [location, navigate]);
+
+    const fetchData = async () => { /* ... (unchanged) ... */
         if (!accountId || !userId) return;
         setLoading(true);
         const params = new URLSearchParams();
@@ -210,7 +220,8 @@ const TransactionListPage = () => {
         fetchData();
     }, [accountId, userId, filters]);
 
-    const handleEditClick = (transaction) => {
+    // --- (All handler functions remain unchanged) ---
+    const handleEditClick = (transaction) => { /* ... (unchanged) ... */
         setEditingTransactionId(transaction.id);
         setEditFormData({
             description: transaction.description,
@@ -219,13 +230,10 @@ const TransactionListPage = () => {
             categoryId: transaction.category_id || "",
         });
     };
-
     const handleCancelClick = () => setEditingTransactionId(null);
-
     const handleEditFormChange = (e) =>
         setEditFormData((prev) => ({...prev, [e.target.name]: e.target.value}));
-
-    const handleSaveClick = async (transactionId) => {
+    const handleSaveClick = async (transactionId) => { /* ... (unchanged) ... */
         try {
             await apiClient.put(`/transactions/${transactionId}`, {
                 description: editFormData.description,
@@ -239,8 +247,7 @@ const TransactionListPage = () => {
             console.error("Failed to update transaction", error);
         }
     };
-
-    const handleDeleteTransaction = async (id) => {
+    const handleDeleteTransaction = async (id) => { /* ... (unchanged) ... */
         if (window.confirm("Are you sure you want to delete this transaction?")) {
             try {
                 await apiClient.delete(`/transactions/${id}`);
@@ -253,9 +260,6 @@ const TransactionListPage = () => {
 
     return (
         <div className="space-y-6">
-            {/* H1 is gone (handled by Header) */}
-
-            {/* Add Transaction Modal */}
             <AddTransactionForm
                 categories={categories}
                 onTransactionAdded={fetchData}
@@ -263,7 +267,6 @@ const TransactionListPage = () => {
                 onClose={() => setIsModalOpen(false)}
             />
 
-            {/* Filter Controls */}
             <FilterControls
                 filters={filters}
                 onFilterChange={(name, value) =>
@@ -273,22 +276,24 @@ const TransactionListPage = () => {
                 }
             />
 
-            {/* Main Content Card: Transactions List */}
-            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-                <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-200">
-                    <h2 className="text-xl font-semibold text-gray-800">Your Transactions</h2>
+            {/* --- Main Card (unchanged) --- */}
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
+                <div
+                    className="flex flex-col sm:flex-row justify-between items-center p-4 sm:p-6 border-b border-gray-200 space-y-3 sm:space-y-0">
+                    <h2 className="text-xl font-semibold text-gray-900">Your Transactions</h2>
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors"
+                        className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors w-full sm:w-auto justify-center"
                     >
                         <Plus size={16} className="mr-2"/>
                         Add Transaction
                     </button>
                 </div>
 
-                {/* --- Transactions Table --- */}
+                {/* --- Table (unchanged) --- */}
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
+                        {/* ... (thead and tbody are unchanged) ... */}
                         <thead className="bg-gray-50">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
@@ -315,7 +320,7 @@ const TransactionListPage = () => {
                                                     name="transaction_date"
                                                     value={editFormData.transaction_date}
                                                     onChange={handleEditFormChange}
-                                                    className="text-sm border-gray-300 rounded-md p-1"
+                                                    className="text-sm border-gray-300 rounded-md p-1 shadow-sm"
                                                 />
                                             </td>
                                             <td className="px-6 py-4">
@@ -324,7 +329,7 @@ const TransactionListPage = () => {
                                                     name="description"
                                                     value={editFormData.description}
                                                     onChange={handleEditFormChange}
-                                                    className="text-sm border-gray-300 rounded-md p-1 w-full"
+                                                    className="text-sm border-gray-300 rounded-md p-1 w-full shadow-sm"
                                                 />
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
@@ -332,7 +337,7 @@ const TransactionListPage = () => {
                                                     name="categoryId"
                                                     value={editFormData.categoryId}
                                                     onChange={handleEditFormChange}
-                                                    className="text-sm border-gray-300 rounded-md p-1"
+                                                    className="text-sm border-gray-300 rounded-md p-1 shadow-sm"
                                                 >
                                                     <option value="">Uncategorized</option>
                                                     {categories.map((cat) => (
@@ -342,14 +347,14 @@ const TransactionListPage = () => {
                                                     ))}
                                                 </select>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                                            <td className="px-6 py-4 whitespace-nowG.rap text-right">
                                                 <input
                                                     type="number"
                                                     name="amount"
                                                     value={editFormData.amount}
                                                     onChange={handleEditFormChange}
                                                     step="0.01"
-                                                    className="text-sm border-gray-300 rounded-md p-1 text-right w-28"
+                                                    className="text-sm border-gray-300 rounded-md p-1 text-right w-28 shadow-sm"
                                                 />
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm space-x-2">

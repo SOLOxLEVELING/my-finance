@@ -1,7 +1,7 @@
 // src/components/CSVUploader.jsx
 
 import React, {useState} from "react";
-import apiClient from "../api/axios"; // Adjust the path if your folder structure is different
+import apiClient from "../api/axios";
 
 const CSVUploader = () => {
     const [file, setFile] = useState(null);
@@ -23,7 +23,7 @@ const CSVUploader = () => {
             return;
         }
 
-        const token = localStorage.getItem("token"); // 👈 get the token
+        const token = localStorage.getItem("token");
 
         if (!token) {
             setMessage("Not authenticated. Please login again.");
@@ -43,8 +43,6 @@ const CSVUploader = () => {
                 "/transactions/upload",
                 formData,
                 {
-                    // The "Content-Type" is often set automatically by the browser with FormData
-                    // And "Authorization" is handled by the apiClient interceptor
                     headers: {
                         "Content-Type": "multipart/form-data",
                     },
@@ -63,10 +61,10 @@ const CSVUploader = () => {
     };
 
     return (
-        // Updated card styles: p-6 and shadow-lg
-        <div className="w-full max-w-md p-6 space-y-6 bg-white rounded-lg shadow-lg">
+        // --- Updated Card Styles ---
+        <div className="w-full max-w-md p-6 space-y-6 bg-white rounded-lg shadow-lg border border-gray-200">
             <div>
-                <h2 className="text-2xl font-bold text-center text-gray-800">
+                <h2 className="text-2xl font-bold text-center text-gray-900">
                     Import Transactions
                 </h2>
                 <p className="mt-2 text-sm text-center text-gray-600">
@@ -87,7 +85,7 @@ const CSVUploader = () => {
                     >
                         CSV File
                     </label>
-                    {/* Updated file input styles */}
+                    {/* --- Updated File Input Style --- */}
                     <input
                         id="file-upload"
                         type="file"
@@ -96,7 +94,7 @@ const CSVUploader = () => {
                         className="block w-full mt-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                     />
                 </div>
-                {/* Updated button styles */}
+                {/* --- Primary Button Style --- */}
                 <button
                     type="submit"
                     disabled={isUploading || !file}

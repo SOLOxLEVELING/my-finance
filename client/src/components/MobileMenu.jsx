@@ -3,9 +3,9 @@
 import React from "react";
 import {Link, useLocation} from "react-router-dom";
 import {useAuth} from "../context/AuthContext";
-import {ArrowRightLeft, Grip, LayoutDashboard, LineChart, LogOut, Settings, Upload, X,} from "lucide-react";
+import {ArrowRightLeft, Grip, HelpCircle, LayoutDashboard, LineChart, LogOut, Settings, Upload, X,} from "lucide-react";
 
-// Helper component for individual menu items
+// --- Updated MobileMenuItem styles ---
 const MobileMenuItem = ({icon: Icon, text, to, onClick}) => {
     const location = useLocation();
     const isActive = location.pathname === to;
@@ -13,13 +13,13 @@ const MobileMenuItem = ({icon: Icon, text, to, onClick}) => {
     return (
         <Link
             to={to}
-            onClick={onClick} // This will close the menu on navigation
+            onClick={onClick}
             className={`
         flex items-center py-3 px-4 rounded-md
         ${
                 isActive
-                    ? "bg-indigo-700 text-white"
-                    : "text-indigo-100 hover:bg-indigo-700 hover:text-white"
+                    ? "bg-gray-700 text-white" // Updated active style
+                    : "text-gray-400 hover:bg-gray-700 hover:text-white" // Updated inactive style
             }
       `}
         >
@@ -35,22 +35,21 @@ const MobileMenu = ({isOpen, onClose}) => {
     if (!isOpen) return null;
 
     return (
-        // Full-screen overlay for the menu on mobile
         <div className="lg:hidden fixed inset-0 z-40 flex">
-            {/* Menu Content */}
-            <div className="flex flex-col w-full max-w-xs h-full p-4 bg-indigo-900 text-white">
+            {/* --- Menu Content (Updated Theme) --- */}
+            <div className="flex flex-col w-full max-w-xs h-full p-4 bg-gray-900 text-white">
                 {/* Header with Close Button */}
                 <div className="flex justify-between items-center mb-6">
                     <span className="text-xl font-bold text-white">Menu</span>
                     <button
                         onClick={onClose}
-                        className="p-2 rounded-md text-indigo-200 hover:bg-indigo-700"
+                        className="p-2 rounded-md text-gray-300 hover:bg-gray-700" // Updated style
                     >
                         <X size={24}/>
                     </button>
                 </div>
 
-                {/* Navigation Links */}
+                {/* --- Navigation Links --- */}
                 <nav className="flex-1 space-y-2">
                     <MobileMenuItem
                         icon={LayoutDashboard}
@@ -82,7 +81,6 @@ const MobileMenu = ({isOpen, onClose}) => {
                         to="/settings"
                         onClick={onClose}
                     />
-                    {/* --- NEW IMPORT LINK --- */}
                     <MobileMenuItem
                         icon={Upload}
                         text="Import Data"
@@ -91,14 +89,20 @@ const MobileMenu = ({isOpen, onClose}) => {
                     />
                 </nav>
 
-                {/* Footer / Logout */}
-                <div className="mt-auto">
+                {/* --- Footer / Logout (Updated styles) --- */}
+                <div className="mt-auto space-y-2">
+                    <MobileMenuItem
+                        icon={HelpCircle}
+                        text="Help"
+                        to="/help"
+                        onClick={onClose}
+                    />
                     <button
                         onClick={() => {
                             logout();
-                            onClose(); // Close menu on logout
+                            onClose();
                         }}
-                        className="flex items-center w-full py-3 px-4 rounded-md text-indigo-100 hover:bg-indigo-700 hover:text-white"
+                        className="flex items-center w-full py-3 px-4 rounded-md text-gray-400 hover:bg-gray-700 hover:text-white"
                     >
                         <LogOut size={20} className="mr-3"/>
                         <span className="font-medium">Logout</span>
