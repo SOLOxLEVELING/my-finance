@@ -199,7 +199,7 @@ const LandingPage = () => {
                         variants={fadeInUp} // Staggered animation
                     >
                         <img
-                            src="/img/main.png"
+                            src="/img/feature.png"
                             alt="Financial Dashboard Illustration"
                             className="w-full rounded-lg" // Removed shadow/border from img
                         />
@@ -319,7 +319,7 @@ const LandingPage = () => {
                             {/* Image Placeholder */}
                             <div className="p-4 bg-gray-50 flex items-center justify-center">
                                 <img
-                                    src="/img/feature.png"
+                                    src="/img/main.png"
                                     alt="myFinance Dashboard Screenshot"
                                     className="w-full h-auto rounded-lg shadow-md"
                                 />
