@@ -83,7 +83,8 @@ const DashboardPage = () => {
                             value={dashboardData.summary.totalIncome}
                             icon={TrendingUp}
                             colorTheme="green"
-                            linkTo="/transactions"
+                            // --- UPDATED ---
+                            linkTo="/app/transactions" // was /transactions
                             showQuickAdd={true}
                         />
                         <StatCard
@@ -91,7 +92,8 @@ const DashboardPage = () => {
                             value={dashboardData.summary.totalExpenses}
                             icon={TrendingDown}
                             colorTheme="red"
-                            linkTo="/transactions"
+                            // --- UPDATED ---
+                            linkTo="/app/transactions" // was /transactions
                             showQuickAdd={true}
                         />
                         <StatCard
@@ -99,7 +101,8 @@ const DashboardPage = () => {
                             value={dashboardData.summary.netSavings}
                             icon={PiggyBank}
                             colorTheme="blue"
-                            linkTo="/transactions"
+                            // --- UPDATED ---
+                            linkTo="/app/transactions" // was /transactions
                         />
                     </div>
 

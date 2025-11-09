@@ -5,7 +5,7 @@ import {useAuth} from "../context/AuthContext";
 import {Link, useNavigate} from "react-router-dom";
 import apiClient from "../api/axios";
 
-// --- New Logo Component (local to this page) ---
+// --- Logo Component (local to this page) ---
 const Logo = () => (
     <div className="flex justify-center items-center mb-6">
         {/* Simple "T7" logo */}
@@ -34,7 +34,10 @@ const LoginPage = () => {
         try {
             const response = await apiClient.post("/auth/login", {email, password});
             login(response.data);
-            navigate("/");
+
+            // --- UPDATED ---
+            // Navigate to /app (the new dashboard index) instead of /
+            navigate("/app");
         } catch (err) {
             setError("Failed to log in. Please check your credentials.");
         }
@@ -96,7 +99,8 @@ const LoginPage = () => {
                         <p className="text-center text-sm text-gray-600">
                             Don't have an account?{" "}
                             <Link
-                                to="/register"
+                                // --- UPDATED ---
+                                to="/app/register" // was /register
                                 className="font-medium text-indigo-600 hover:underline"
                             >
                                 Register here

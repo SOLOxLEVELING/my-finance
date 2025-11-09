@@ -14,36 +14,50 @@ import DataImportPage from "./pages/DataImportPage";
 import SettingsPage from "./pages/SettingsPage";
 import CurrencyProvider from "./context/CurrencyProvider";
 import MainLayout from "./components/MainLayout";
-import {SidebarProvider} from "./context/SidebarContext"; // <-- Import the new provider
+import {SidebarProvider} from "./context/SidebarContext";
+
+// --- 1. Import your new LandingPage ---
+// (Assuming this is the correct path)
+import LandingPage from "./pages/LandingPage";
 
 function App() {
     return (
         <AuthProvider>
             <CurrencyProvider>
-                {/* --- Add the SidebarProvider wrapper here --- */}
                 <SidebarProvider>
                     <BrowserRouter>
                         <Routes>
-                            {/* Public Routes */}
-                            <Route path="/login" element={<LoginPage/>}/>
-                            <Route path="/register" element={<RegisterPage/>}/>
+                            {/* --- ROUTE 1: New Public Landing Page --- */}
+                            {/* This is now the homepage */}
+                            <Route path="/" element={<LandingPage/>}/>
 
-                            {/* Protected Routes */}
+                            {/* --- ROUTE 2: Public App Routes --- */}
+                            {/* Moved from /login to /app/login */}
+                            <Route path="/app/login" element={<LoginPage/>}/>
+                            {/* Moved from /register to /app/register */}
+                            <Route path="/app/register" element={<RegisterPage/>}/>
+
+                            {/* --- ROUTE 3: Protected App Routes --- */}
                             <Route element={<ProtectedRoute/>}>
-                                {/* Use MainLayout for the protected routes */}
-                                <Route path="/" element={<MainLayout/>}>
+                                {/* This path is changed from "/" to "/app" */}
+                                <Route path="/app" element={<MainLayout/>}>
+                                    {/* 'index' is now the default for /app */}
                                     <Route index element={<DashboardPage/>}/>
                                     <Route path="transactions" element={<TransactionListPage/>}/>
                                     <Route path="categories" element={<CategoryManagerPage/>}/>
                                     <Route path="budgets" element={<BudgetSetupPage/>}/>
                                     <Route path="import" element={<DataImportPage/>}/>
-                                    <Route path="/settings" element={<SettingsPage/>}/>
+                                    {/* Changed path from "/settings" to "settings" to be relative */}
+                                    <Route path="settings" element={<SettingsPage/>}/>
                                 </Route>
                             </Route>
+
+                            {/* You can add a 404 Not Found page here if you like */}
+                            {/* <Route path="*" element={<NotFoundPage />} /> */}
+
                         </Routes>
                     </BrowserRouter>
                 </SidebarProvider>
-                {/* --- End of SidebarProvider wrapper --- */}
             </CurrencyProvider>
         </AuthProvider>
     );

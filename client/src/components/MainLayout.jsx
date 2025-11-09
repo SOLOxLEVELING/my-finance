@@ -9,23 +9,24 @@ import Clarity from "@microsoft/clarity";
 import MobileHeader from "./MobileHeader";
 import MobileMenu from "./MobileMenu";
 
-// We still need this helper for the mobile page title
+// --- UPDATED ---
+// All paths prefixed with /app
 const getPageTitle = (pathname) => {
     switch (pathname) {
-        case "/":
+        case "/app": // was /
             return "Dashboard";
-        case "/transactions":
+        case "/app/transactions": // was /transactions
             return "Transactions";
-        case "/categories":
+        case "/app/categories": // was /categories
             return "Manage Categories";
-        case "/budgets":
+        case "/app/budgets": // was /budgets
             return "Set Monthly Budgets";
-        case "/settings":
+        case "/app/settings": // was /settings
             return "Settings";
-        case "/import":
+        case "/app/import": // was /import
             return "Import Data";
         default:
-            return "Dashboard";
+            return "Dashboard"; // Fallback
     }
 };
 

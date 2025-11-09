@@ -16,7 +16,8 @@ const EmptyState = () => (
             Start by creating one to track your spending.
         </p>
         <Link
-            to="/budgets"
+            // --- UPDATED ---
+            to="/app/budgets" // was /budgets
             className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors"
         >
             <Plus size={16} className="mr-2"/>

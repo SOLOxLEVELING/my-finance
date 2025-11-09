@@ -20,15 +20,17 @@ const MobileHeader = ({onMenuClick}) => {
     return (
         <header className="lg:hidden flex items-center justify-between px-4 py-4 bg-gray-900 text-white shadow-md">
             {/* Logo */}
-            <Link to="/">
+            {/* --- UPDATED --- */}
+            <Link to="/app">
                 <Logo/>
             </Link>
 
             {/* --- Right Side Icons (NEW) --- */}
             <div className="flex items-center space-x-2">
                 {/* Profile Icon Link */}
+                {/* --- UPDATED --- */}
                 <Link
-                    to="/settings"
+                    to="/app/settings" // was /settings
                     className="p-2 rounded-md text-gray-300 hover:bg-gray-700"
                 >
                     <User size={22}/>

@@ -36,7 +36,8 @@ const RegisterPage = () => {
             await apiClient.post("/auth/register", {username, email, password});
             setMessage("Registration successful! Please log in.");
             setTimeout(() => {
-                navigate("/login");
+                // --- UPDATED ---
+                navigate("/app/login"); // was /login
             }, 2000);
         } catch (err) {
             setError("Registration failed. Username or email may already be in use.");
@@ -119,7 +120,8 @@ const RegisterPage = () => {
                         <p className="text-center text-sm text-gray-600">
                             Already have an account?{" "}
                             <Link
-                                to="/login"
+                                // --- UPDATED ---
+                                to="/app/login" // was /login
                                 className="font-medium text-indigo-600 hover:underline"
                             >
                                 Login here

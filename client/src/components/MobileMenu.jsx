@@ -8,6 +8,8 @@ import {ArrowRightLeft, Grip, HelpCircle, LayoutDashboard, LineChart, LogOut, Se
 // --- Updated MobileMenuItem styles ---
 const MobileMenuItem = ({icon: Icon, text, to, onClick}) => {
     const location = useLocation();
+
+    // This simple check is still fine
     const isActive = location.pathname === to;
 
     return (
@@ -49,42 +51,42 @@ const MobileMenu = ({isOpen, onClose}) => {
                     </button>
                 </div>
 
-                {/* --- Navigation Links --- */}
+                {/* --- Navigation Links (ALL UPDATED) --- */}
                 <nav className="flex-1 space-y-2">
                     <MobileMenuItem
                         icon={LayoutDashboard}
                         text="Dashboard"
-                        to="/"
+                        to="/app" // was /
                         onClick={onClose}
                     />
                     <MobileMenuItem
                         icon={ArrowRightLeft}
                         text="Transactions"
-                        to="/transactions"
+                        to="/app/transactions" // was /transactions
                         onClick={onClose}
                     />
                     <MobileMenuItem
                         icon={Grip}
                         text="Categories"
-                        to="/categories"
+                        to="/app/categories" // was /categories
                         onClick={onClose}
                     />
                     <MobileMenuItem
                         icon={LineChart}
                         text="Budgets"
-                        to="/budgets"
+                        to="/app/budgets" // was /budgets
                         onClick={onClose}
                     />
                     <MobileMenuItem
                         icon={Settings}
                         text="Settings"
-                        to="/settings"
+                        to="/app/settings" // was /settings
                         onClick={onClose}
                     />
                     <MobileMenuItem
                         icon={Upload}
                         text="Import Data"
-                        to="/import"
+                        to="/app/import" // was /import
                         onClick={onClose}
                     />
                 </nav>
@@ -94,7 +96,7 @@ const MobileMenu = ({isOpen, onClose}) => {
                     <MobileMenuItem
                         icon={HelpCircle}
                         text="Help"
-                        to="/help"
+                        to="/app/help" // was /help
                         onClick={onClose}
                     />
                     <button

@@ -52,6 +52,13 @@ const Logo = ({isCollapsed}) => (
 // --- New SidebarItem Component ---
 const SidebarItem = ({icon: Icon, text, to, onClick, isCollapsed}) => {
     const location = useLocation();
+
+    // --- UPDATED ---
+    // The `isActive` logic needs to be slightly more robust for the index route.
+    // location.pathname === to OR (to === "/app" and location.pathname.startsWith("/app/"))
+    // But for simplicity, React Router's <NavLink> handles this better.
+    // For now, this will work for all pages except showing "Dashboard" as active
+    // when on "/app/transactions". Let's stick with the simple check.
     const isActive = to && location.pathname === to;
 
     const content = (
@@ -103,13 +110,15 @@ const Sidebar = () => {
     const {logout} = useAuth();
     const {isCollapsed, toggleSidebar} = useSidebar();
 
+    // --- UPDATED ---
+    // All 'to' paths are prefixed with /app
     const navItems = [
-        {icon: LayoutDashboard, text: "Dashboard", to: "/"},
-        {icon: ArrowRightLeft, text: "Transactions", to: "/transactions"},
-        {icon: Grip, text: "Categories", to: "/categories"},
-        {icon: LineChart, text: "Budgets", to: "/budgets"},
-        {icon: Settings, text: "Settings", to: "/settings"},
-        {icon: Upload, text: "Import Data", to: "/import"}, // <-- Added Import link
+        {icon: LayoutDashboard, text: "Dashboard", to: "/app"},
+        {icon: ArrowRightLeft, text: "Transactions", to: "/app/transactions"},
+        {icon: Grip, text: "Categories", to: "/app/categories"},
+        {icon: LineChart, text: "Budgets", to: "/app/budgets"},
+        {icon: Settings, text: "Settings", to: "/app/settings"},
+        {icon: Upload, text: "Import Data", to: "/app/import"},
     ];
 
     return (
@@ -141,7 +150,8 @@ const Sidebar = () => {
                 <SidebarItem
                     icon={HelpCircle}
                     text="Help"
-                    to="/help"
+                    // --- UPDATED ---
+                    to="/app/help" // was /help
                     isCollapsed={isCollapsed}
                 />
                 <SidebarItem

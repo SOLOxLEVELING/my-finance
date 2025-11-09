@@ -38,7 +38,7 @@ const StatCard = ({
                       value,
                       icon: Icon,
                       colorTheme = "default",
-                      linkTo = "/",
+                      linkTo = "/", // This is correct, it's passed from DashboardPage
                       showQuickAdd = false, // <-- New prop
                   }) => {
     const {format} = useCurrency();
@@ -48,8 +48,10 @@ const StatCard = ({
     // --- New Quick Add Handler ---
     const handleQuickAdd = (e) => {
         e.stopPropagation(); // Stop link navigation if clicking button
-        // Navigate to transactions page and send state to open the modal
-        navigate("/transactions", {state: {openModal: true}});
+
+        // --- UPDATED ---
+        // Navigate to /app/transactions
+        navigate("/app/transactions", {state: {openModal: true}});
     };
 
     return (
@@ -75,7 +77,7 @@ const StatCard = ({
             <div className="flex justify-between items-center z-10">
                 {/* "More ->" Link */}
                 <Link
-                    to={linkTo}
+                    to={linkTo} // This correctly receives /app/transactions from DashboardPage.jsx
                     className="flex items-center text-sm font-medium opacity-90 hover:opacity-100"
                 >
                     More
